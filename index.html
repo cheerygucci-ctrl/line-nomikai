@@ -104,7 +104,30 @@
 
   .intro .big { font-size: 26px; font-weight: 900; line-height: 1.35; margin: 0; }
   .intro p { margin: 0; color: var(--ink-soft); }
-  .intro ul { margin: 0; padding-left: 1.2em; color: var(--ink-soft); font-size: 14px; }
+  .greet { white-space: pre-wrap; color: var(--ink) !important; font-weight: 700; }
+  .rules { background: #FFF3D1; border-radius: 16px; padding: 12px 14px; }
+  .rules b { color: var(--lantern); display: block; margin-bottom: 4px; }
+  .rules p { white-space: pre-wrap; font-size: 14px; margin: 0; color: var(--ink) !important; }
+  .agree { display: flex; gap: 10px; align-items: flex-start; font-weight: 700; padding: 12px 14px; border-radius: 14px; border: 2px dashed #F1DFB2; cursor: pointer; }
+  .agree input { width: 24px; height: 24px; accent-color: var(--lantern); flex: none; margin: 0; }
+  .agree:has(input:checked) { border-style: solid; border-color: var(--lantern); background: #FFF6F2; }
+  .sub-input { display: none; } .sub-input.show { display: block; animation: slide .3s ease; }
+  .multi input[type=checkbox] { position: absolute; opacity: 0; pointer-events: none; }
+  .multi input:checked + label { background: #fff; border-color: var(--beer-bottom); box-shadow: 0 4px 0 var(--beer-bottom); transform: translateY(-2px); }
+  .multi input:checked + label::after { content: "✓"; margin-left: auto; color: var(--lantern); font-weight: 900; }
+  .multi input:focus-visible + label { outline: 3px solid var(--ink); outline-offset: 2px; }
+  .stop { display: none; text-align: center; padding: 12px; border-radius: 16px; background: #FFF6F2; font-weight: 700; }
+  .stop.show { display: block; animation: pop .35s ease; }
+  /* 入ってきた質問の中身を順番に出す */
+  .step.on > * { animation: rise-in .45s cubic-bezier(.2,.8,.2,1) both; }
+  .step.on > *:nth-child(2) { animation-delay: .05s; } .step.on > *:nth-child(3) { animation-delay: .1s; }
+  .step.on > *:nth-child(4) { animation-delay: .15s; } .step.on > *:nth-child(5) { animation-delay: .2s; }
+  .step.on .choices label { animation: rise-in .4s cubic-bezier(.2,.8,.2,1) both; }
+  .step.on .choices label:nth-of-type(2) { animation-delay: .08s; } .step.on .choices label:nth-of-type(3) { animation-delay: .16s; } .step.on .choices label:nth-of-type(4) { animation-delay: .24s; }
+  @keyframes rise-in { from { opacity: 0; transform: translateY(10px); } }
+  .choices label:active { transform: scale(.97); }
+  .progress .fill { position: relative; }
+  .progress .fill::after { content: ""; position: absolute; right: -2px; top: -3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: -8px 2px 0 -2px #fff; }
 
   /* カンパイ画面 */
   .done { position: fixed; inset: 0; z-index: 5; display: none; flex-direction: column; align-items: center; justify-content: center;
@@ -138,6 +161,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     .bubbles, .confetti { display: none; }
+    .step.on > *, .step.on .choices label, .sub-input.show, .stop.show { animation: none !important; }
     .step.on, .say.pop, .clink .m1, .clink .m2, .splash i, .kanpai { animation: none !important; }
     .kanpai { opacity: 1; transform: none; }
     .clink .m1 { transform: translateX(26px) rotate(10deg); } .clink .m2 { transform: scaleX(-1) translateX(26px) rotate(10deg); }
@@ -164,15 +188,42 @@
     <div class="loading" id="loading">ちょっと待ってね…</div>
 
     <section class="step intro" data-step="intro">
-      <p class="big" id="introTitle">飲み会アンケート</p>
-      <p id="introText">7つの質問に答えるだけ。1分くらいで終わるよ！</p>
-      <ul><li>答えると、トーク画面にメニューが出てくるよ</li><li>あとから何度でも直せるよ</li></ul>
-      <div class="nav"><button type="button" class="btn" data-next id="startBtn">はじめる</button></div>
+      <p class="big" id="introTitle">ようこそ！</p>
+      <p class="greet" id="greet">読み込み中…</p>
+      <div class="rules"><b>参加ルール</b><p id="rulesTop"></p></div>
+      <p id="introText">アンケートは2〜3分で終わるよ。答えると、トーク画面にメニューが出てくるよ！</p>
+      <div class="nav"><button type="button" class="btn" data-next id="startBtn">アンケートをはじめる</button></div>
     </section>
 
     <section class="step" data-step="nickname" data-say="まずは、なんて呼べばいい？">
       <label class="q" for="nickname">お名前（ニックネーム）<span class="tag req">必須</span></label>
       <input type="text" id="nickname" name="nickname" maxlength="30" autocomplete="nickname" enterkeyhint="next">
+      <p class="err" data-err></p>
+      <div class="nav"><button type="button" class="btn ghost" data-back>もどる</button><button type="button" class="btn" data-next>つぎへ</button></div>
+    </section>
+
+    <section class="step" data-step="adult" data-say="お酒の席だから、念のため確認させてね">
+      <p class="q" id="adultQ">20歳以上ですか？<span class="tag req">必須</span></p>
+      <div class="choices" role="radiogroup" aria-labelledby="adultQ">
+        <input type="radio" id="ad1" name="adult" value="はい"><label for="ad1"><span class="em">🙆</span>はい、20歳以上です</label>
+        <input type="radio" id="ad2" name="adult" value="いいえ"><label for="ad2"><span class="em">🙅</span>いいえ</label>
+      </div>
+      <div class="stop" id="stop">ごめんね、お酒の席なので<br>20歳以上の人だけの会なんだ。<br>また大人になったら遊びに来てね！</div>
+      <p class="err" data-err></p>
+      <div class="nav"><button type="button" class="btn ghost" data-back>もどる</button><button type="button" class="btn" data-next>つぎへ</button></div>
+    </section>
+
+    <section class="step" data-step="referral" data-say="この会のこと、どこで知ったの？">
+      <p class="q" id="refQ">この会を知ったきっかけは？<span class="tag req">必須</span></p>
+      <div class="choices" role="radiogroup" aria-labelledby="refQ">
+        <input type="radio" id="r1" name="referral" value="知り合いの紹介"><label for="r1"><span class="em">🤝</span>知り合いの紹介</label>
+        <input type="radio" id="r2" name="referral" value="SNS"><label for="r2"><span class="em">📱</span>SNS</label>
+        <input type="radio" id="r3" name="referral" value="その他"><label for="r3"><span class="em">💭</span>その他</label>
+      </div>
+      <div class="sub-input" id="referrerBox">
+        <label class="hint" for="referrer">紹介してくれた人の名前（任意）</label>
+        <input type="text" id="referrer" name="referrer" maxlength="30" placeholder="例：たろう" enterkeyhint="next">
+      </div>
       <p class="err" data-err></p>
       <div class="nav"><button type="button" class="btn ghost" data-back>もどる</button><button type="button" class="btn" data-next>つぎへ</button></div>
     </section>
@@ -184,6 +235,26 @@
         <input type="radio" id="a2" name="attend" value="不参加"><label for="a2"><span class="em">🙇</span>今回は不参加</label>
       </div>
       <p class="err" data-err></p>
+      <div class="nav"><button type="button" class="btn ghost" data-back>もどる</button><button type="button" class="btn" data-next>つぎへ</button></div>
+    </section>
+
+    <section class="step" data-step="purpose" data-say="どんなことを楽しみにしてる？いくつでも選んでね">
+      <p class="q" id="purQ">参加の目的は？<span class="tag req">必須・複数OK</span></p>
+      <div class="choices multi" role="group" aria-labelledby="purQ">
+        <input type="checkbox" id="p1" name="purpose" value="交流したい"><label for="p1"><span class="em">🥂</span>いろんな人と交流したい</label>
+        <input type="checkbox" id="p2" name="purpose" value="仕事の話を聞きたい"><label for="p2"><span class="em">💼</span>仕事の話を聞きたい</label>
+        <input type="checkbox" id="p3" name="purpose" value="夢・目標を話したい"><label for="p3"><span class="em">🌟</span>夢や目標を話したい</label>
+        <input type="checkbox" id="p4" name="purpose" value="その他"><label for="p4"><span class="em">💭</span>その他</label>
+      </div>
+      <p class="err" data-err></p>
+      <div class="nav"><button type="button" class="btn ghost" data-back>もどる</button><button type="button" class="btn" data-next>つぎへ</button></div>
+    </section>
+
+    <section class="step" data-step="connect" data-say="お仕事で、どんな人とつながりたい？" data-face="sparkle">
+      <label class="q" for="connect">仕事でつながりたい人<span class="tag opt">任意</span></label>
+      <p class="hint">業界・職種・立場など、なんでもOK！</p>
+      <textarea id="connect" name="connect" maxlength="300" placeholder="例：IT系の経営者、Webデザイナー、独立している人"></textarea>
+      <div class="count" data-for="connect"></div>
       <div class="nav"><button type="button" class="btn ghost" data-back>もどる</button><button type="button" class="btn" data-next>つぎへ</button></div>
     </section>
 
@@ -224,6 +295,14 @@
       <label class="q" for="comment">ひとこと<span class="tag opt">任意</span></label>
       <textarea id="comment" name="comment" maxlength="500" placeholder="意気込みや質問などあればどうぞ"></textarea>
       <div class="count" data-for="comment"></div>
+      <div class="nav"><button type="button" class="btn ghost" data-back>もどる</button><button type="button" class="btn" data-next>つぎへ</button></div>
+    </section>
+
+    <section class="step" data-step="agree" data-say="さいごに、ルールの確認だよ！" data-face="normal">
+      <p class="q">参加ルールの確認</p>
+      <div class="rules"><b>参加ルール</b><p id="rulesBottom"></p></div>
+      <label class="agree"><input type="checkbox" id="agree" name="agree"> 上のルールを守って参加します</label>
+      <p class="err" data-err></p>
       <div class="nav"><button type="button" class="btn ghost" data-back>もどる</button><button type="submit" class="btn" id="submit">送信してカンパイ！</button></div>
     </section>
   </form>
@@ -250,7 +329,11 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycby45UwD6Ymwvnf_D_4vMbUG
 // ?preview=1 で LINE につながずに見た目だけ確認できる（送信もしない）
 const params = new URLSearchParams(location.search);
 const PREVIEW = params.has('preview');
-const FIELDS = ['nickname', 'attend', 'drink', 'ng', 'dream', 'goal', 'comment'];
+const FIELDS = ['nickname', 'attend', 'drink', 'ng', 'dream', 'goal', 'comment', 'referral', 'referrer', 'adult', 'connect'];
+const SAMPLE_EVENT = {
+  greeting: 'この会は、お酒を飲みながら「将来の夢」や「これからの働き方」を気軽に語り合う交流会です。希望する人には、主催者からお仕事の紹介もしています。\nまずはかんたんなアンケートに答えてね！',
+  rules: '・セクハラ、パワハラ、しつこい勧誘・営業は禁止です\n・守れない場合は途中で退場していただき、次回以降も参加できません\n・お酒の席なので、20歳未満の方は参加できません',
+};
 const $ = (id) => document.getElementById(id);
 const form = $('form');
 const steps = [...document.querySelectorAll('.step')];
@@ -314,6 +397,12 @@ function check(s) {
   let msg = '';
   if (k === 'nickname' && !form.elements.nickname.value.trim()) msg = 'お名前を入れてね';
   if (k === 'attend' && !form.elements.attend.value) msg = 'どちらか選んでね';
+  if (k === 'adult' && !form.elements.adult.value) msg = 'どちらか選んでね';
+  if (k === 'adult' && form.elements.adult.value === 'いいえ') { msg = ' '; }
+  if (k === 'referral' && !form.elements.referral.value) msg = 'ひとつ選んでね';
+  if (k === 'purpose' && !purposes().length) msg = 'ひとつ以上選んでね';
+  if (k === 'agree' && !$('agree').checked) msg = 'ルールに同意してね';
+  if (msg === ' ') { say('ごめんね…お酒の席だから20歳以上の人だけなんだ', 'sad', 'droop'); return false; }
   if (err) err.textContent = msg;
   if (msg) { say(msg, 'wow', 'wiggle'); return false; }
   return true;
@@ -329,13 +418,24 @@ form.addEventListener('click', (e) => {
 });
 
 // 選んだ瞬間にノミィが反応
+function purposes() { return [...form.querySelectorAll('input[name=purpose]:checked')].map((c) => c.value); }
+
 const REACT = {
+  adult: { 'はい': ['ありがとう！', 'happy', 'wiggle'], 'いいえ': ['ごめんね…お酒の席だから20歳以上の人だけなんだ', 'sad', 'droop'] },
+  referral: { '知り合いの紹介': ['いい人に誘われたね！よかったら名前も教えて', 'happy', 'jump'], 'SNS': ['見つけてくれてありがとう！', 'wink', 'wiggle'], 'その他': ['なるほど〜！', 'normal', 'wiggle'] },
   attend: { '参加': ['やったー！待ってるね！', 'happy', 'jump'], '不参加': ['そっかぁ…また今度ね！', 'sad', 'droop'] },
   drink: { '飲む': ['いいね、いっぱいカンパイしよ！', 'happy', 'jump'], '少し': ['ほどほどがいちばん！', 'wink', 'wiggle'], '飲まない': ['ソフドリでも楽しもうね！', 'happy', 'wiggle'] },
 };
 form.addEventListener('change', (e) => {
   const r = REACT[e.target.name] && REACT[e.target.name][e.target.value];
   if (r) say(r[0], r[1], r[2]);
+  if (e.target.name === 'adult') { $('stop').classList.toggle('show', e.target.value === 'いいえ'); }
+  if (e.target.name === 'referral') { $('referrerBox').classList.toggle('show', e.target.value === '知り合いの紹介'); }
+  if (e.target.name === 'purpose' && e.target.checked) {
+    const m = { '交流したい': ['友だち、たくさんできるといいね！', 'happy', 'jump'], '仕事の話を聞きたい': ['お仕事の話、楽しみにしててね！', 'sparkle', 'jump'], '夢・目標を話したい': ['語ろう語ろう！✨', 'sparkle', 'wiggle'], 'その他': ['いいね！', 'wink', 'wiggle'] }[e.target.value];
+    if (m) say(m[0], m[1], m[2]);
+  }
+  if (e.target.id === 'agree' && e.target.checked) say('ありがとう！じゃあ送信しよう！', 'happy', 'jump');
   const err = e.target.closest('.step') && e.target.closest('.step').querySelector('[data-err]');
   if (err) err.textContent = '';
 });
@@ -363,6 +463,9 @@ function getValues() {
   const out = {};
   FIELDS.forEach((k) => { out[k] = String(form.elements[k].value || '').trim(); });
   if (out.attend === '不参加') { out.drink = ''; out.ng = ''; }
+  if (out.referral !== '知り合いの紹介') out.referrer = '';
+  out.purpose = purposes();
+  out.agree = $('agree').checked;
   return out;
 }
 
@@ -373,6 +476,10 @@ function setValues(a) {
     if (el instanceof RadioNodeList) [...el].forEach((r) => { r.checked = r.value === v; });
     else el.value = v;
   });
+  const ps = Array.isArray(a.purpose) ? a.purpose : [];
+  form.querySelectorAll('input[name=purpose]').forEach((c) => { c.checked = ps.includes(c.value); });
+  $('referrerBox').classList.toggle('show', a.referral === '知り合いの紹介');
+  $('agree').checked = false; // 直すときも毎回ルールに同意してもらう
   updateCounts();
 }
 
@@ -384,7 +491,7 @@ function banner(msg) {
 async function api(body) {
   if (PREVIEW) {
     await new Promise((r) => setTimeout(r, 500));
-    return body.type === 'load' ? { ok: true, answer: params.has('again') ? { nickname: 'ありす', attend: '参加', drink: '少し', ng: '', dream: '', goal: '', comment: '' } : null } : { ok: true };
+    return body.type === 'load' ? { ok: true, answer: params.has('again') ? { nickname: 'ありす', attend: '参加', drink: '少し', ng: '', dream: '', goal: '', comment: '', adult: 'はい', referral: '知り合いの紹介', referrer: 'たろう', purpose: ['交流したい'], agree: true, connect: '' } : null } : { ok: true };
   }
   const res = await fetch(GAS_URL, {
     method: 'POST',
@@ -399,7 +506,10 @@ form.addEventListener('submit', async (e) => {
   banner('');
   const v = getValues();
   if (!v.nickname) { go(visibleSteps().findIndex((s) => s.dataset.step === 'nickname'), -1); return check(current()); }
-  if (!v.attend) { go(visibleSteps().findIndex((s) => s.dataset.step === 'attend'), -1); return check(current()); }
+  for (const k of ['adult', 'referral', 'attend', 'purpose', 'agree']) {
+    const i = visibleSteps().findIndex((s) => s.dataset.step === k);
+    if (!check(visibleSteps()[i])) { go(i, -1); return check(current()); }
+  }
   const btn = $('submit');
   const label = btn.textContent;
   btn.disabled = true; btn.textContent = '送信中…';
@@ -409,6 +519,7 @@ form.addEventListener('submit', async (e) => {
     if (res.ok) return celebrate();
     if (res.error === 'auth') banner('ログインの期限が切れたみたい。画面を閉じて、もう一度開いてね。');
     else if (res.error === 'invalid') banner('入力内容をもう一度確認してね。');
+    else if (res.error === 'underage') banner('お酒の席なので、20歳以上の人だけ参加できます。');
     else banner('回答は保存できたけど、メニューを出せなかったよ。主催者に連絡してね。');
     say('あれれ…', 'sad', 'droop');
   } catch (err) {
@@ -455,9 +566,18 @@ function fatal(msg) {
   say('うまく開けなかったみたい…', 'sad');
 }
 
+async function loadEvent() {
+  try {
+    const d = PREVIEW ? { ok: true, event: SAMPLE_EVENT } : await (await fetch(GAS_URL + '?type=event')).json();
+    if (d.ok) return d.event;
+  } catch (e) { /* 読めなくても続ける */ }
+  return SAMPLE_EVENT;
+}
+
 async function main() {
   updateCounts();
   say('やあ！ノミィだよ🍺', 'happy', 'jump');
+  const evP = loadEvent();
   if (!PREVIEW) {
     try { await liff.init({ liffId: LIFF_ID }); } catch (e) { return fatal('LINEアプリから、もう一度開いてね。'); }
     if (!liff.isLoggedIn()) { liff.login({ redirectUri: location.href }); return; }
@@ -471,15 +591,19 @@ async function main() {
       liff.logout(); liff.login({ redirectUri: location.href }); return;
     }
   } catch (e) { /* 読み込めなくても新しく答えられる */ }
+  const ev = await evP;
+  $('greet').textContent = ev.greeting;
+  $('rulesTop').textContent = ev.rules;
+  $('rulesBottom').textContent = ev.rules;
   $('loading').remove();
   if (returning) {
     $('introTitle').textContent = 'おかえり！';
     $('introText').textContent = 'まえの回答が入ってるよ。直したいところだけ変えてね。';
-    $('startBtn').textContent = '直しはじめる';
+    $('startBtn').textContent = '回答を直す';
     $('submit').textContent = '更新してカンパイ！';
   }
   go(0, 1);
-  say(returning ? `おかえり、${form.elements.nickname.value}さん！` : 'やあ！ノミィだよ🍺 いくつか質問させてね！', 'happy', 'jump');
+  say(returning ? `おかえり、${form.elements.nickname.value}さん！` : 'やあ！ノミィだよ🍺 まずはごあいさつを読んでね！', 'happy', 'jump');
 }
 main();
 </script>

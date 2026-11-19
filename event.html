@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
 <script src="nomy.js"></script>
+<script>document.documentElement.classList.add('js');</script>
 <style>
   :root {
     --night: #1F2A44;
@@ -88,7 +89,38 @@
   .err { background: #fff; border-left: 6px solid var(--lantern); border-radius: 12px; padding: 12px; font-weight: 700; }
   .skeleton { color: transparent; background: rgba(255,255,255,.18); border-radius: 8px; }
 
-  @media (prefers-reduced-motion: reduce) { .lanterns svg { animation: none; } }
+  .about { background: var(--card); border-radius: 18px; padding: 14px 16px; }
+  .about p { margin: 0; white-space: pre-wrap; font-weight: 700; }
+  .rules { margin-top: 12px; background: #FFF0E8; border-radius: 14px; padding: 12px 14px; }
+  .rules b { color: var(--lantern); display: block; margin-bottom: 4px; }
+  .rules p { white-space: pre-wrap; font-size: 14px; font-weight: 500; }
+
+  /* ページを開いたときの登場（1回だけ） */
+  .js .lanterns svg { animation: drop .7s cubic-bezier(.3,1.5,.5,1) both, sway 3.2s ease-in-out .7s infinite; }
+  .js .lanterns svg:nth-child(2) { animation-delay: .12s, .82s; } .js .lanterns svg:nth-child(3) { animation-delay: .24s, .94s; }
+  @keyframes drop { from { transform: translateY(-80px) rotate(-10deg); opacity: 0; } }
+  .js .hero h1, .js .hero .when, .js .hero .place { animation: rise-in .6s cubic-bezier(.2,.8,.2,1) both; }
+  .js .hero h1 { animation-delay: .35s; } .js .hero .when { animation-delay: .5s; } .js .hero .place { animation-delay: .6s; }
+  .js .hero .nomy-box { animation: peek .8s cubic-bezier(.3,1.4,.5,1) .7s both; }
+  .js .hero .count { animation: pop .5s cubic-bezier(.3,1.5,.6,1) 1.2s both; transform-origin: 0 100%; }
+  @keyframes rise-in { from { opacity: 0; transform: translateY(14px); } }
+  @keyframes peek { from { transform: translateY(70px); } }
+  @keyframes pop { from { opacity: 0; transform: scale(.6); } }
+  /* スクロールで出てくる */
+  .js .reveal { opacity: 0; transform: translateY(18px); transition: opacity .6s ease, transform .6s cubic-bezier(.2,.8,.2,1); }
+  .js .reveal.in { opacity: 1; transform: none; }
+  .js ol.flow li { opacity: 0; transform: translateX(-10px); transition: opacity .4s ease, transform .4s ease; transition-delay: calc(var(--i) * 90ms); }
+  .js .in ol.flow li { opacity: 1; transform: none; }
+  .js ol.flow .dot { transform: scale(0); transition: transform .35s cubic-bezier(.3,1.6,.5,1); transition-delay: calc(var(--i) * 90ms + 120ms); }
+  .js .in ol.flow .dot { transform: scale(1); }
+  .cta a { transition: transform .15s ease; }
+  .cta a:active { transform: translateY(2px); }
+  .js .cta { animation: rise-in .5s ease 1.4s both; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lanterns svg, .js .lanterns svg, .js .hero h1, .js .hero .when, .js .hero .place, .js .hero .nomy-box, .js .hero .count, .js .cta { animation: none !important; }
+    .js .reveal, .js ol.flow li, .js ol.flow .dot { opacity: 1 !important; transform: none !important; transition: none !important; }
+  }
 </style>
 </head>
 <body>
@@ -109,22 +141,27 @@
 </header>
 
 <main id="main">
-  <section aria-labelledby="h-basic">
+  <section class="reveal" aria-labelledby="h-about">
+    <h2 id="h-about"><span class="ic" aria-hidden="true">🍻</span>この会について</h2>
+    <div class="about"><p id="greet"></p><div class="rules"><b>参加ルール</b><p id="rules"></p></div></div>
+  </section>
+
+  <section class="reveal" aria-labelledby="h-basic">
     <h2 id="h-basic"><span class="ic" aria-hidden="true">📅</span>基本情報</h2>
     <dl class="facts" id="facts"></dl>
   </section>
 
-  <section id="access" aria-labelledby="h-access">
+  <section class="reveal" id="access" aria-labelledby="h-access">
     <h2 id="h-access"><span class="ic" aria-hidden="true">📍</span>アクセス</h2>
     <div class="map" id="map"></div>
   </section>
 
-  <section aria-labelledby="h-flow">
+  <section class="reveal" aria-labelledby="h-flow">
     <h2 id="h-flow"><span class="ic" aria-hidden="true">🍻</span>当日の流れ</h2>
     <div id="flow"></div>
   </section>
 
-  <section aria-labelledby="h-notes">
+  <section class="reveal" aria-labelledby="h-notes">
     <h2 id="h-notes"><span class="ic" aria-hidden="true">🎒</span>持ち物・注意事項</h2>
     <div id="notes"></div>
   </section>
@@ -142,6 +179,8 @@ const SAMPLE = {
     name: '年末だよ！みんなで忘年会', date: '12/20(土) 19:00〜', place: '居酒屋 のんき 渋谷店', address: '東京都渋谷区道玄坂1-2-3 のんきビル2F',
     fee: '4,000円（飲み放題つき）', mapUrl: '', deadline: '12/13(土)まで',
     schedule: '18:45 受付\n19:00 カンパイ！\n19:30 自己紹介タイム\n20:30 夢・目標シェア\n21:00 締め・集合写真',
+    greeting: 'この会は、お酒を飲みながら「将来の夢」や「これからの働き方」を気軽に語り合う交流会です。希望する人には、主催者からお仕事の紹介もしています。',
+    rules: '・セクハラ、パワハラ、しつこい勧誘・営業は禁止です\n・守れない場合は途中で退場していただき、次回以降も参加できません\n・お酒の席なので、20歳未満の方は参加できません',
     notes: '・会費は当日現金でお願いします\n・遅れる場合はLINEで連絡してね',
   },
 };
@@ -159,7 +198,11 @@ function render(d) {
   $('name').textContent = ev.name;
   $('date').textContent = ev.date;
   $('placeTop').textContent = isSet(ev.place) ? '@ ' + ev.place : '';
-  $('count').replaceChildren('いま', el('br'), el('b', { textContent: d.attending }), ' 人が参加予定！');
+  const num = el('b', { textContent: '0' });
+  $('count').replaceChildren('いま', el('br'), num, ' 人が参加予定！');
+  countUp(num, d.attending);
+  $('greet').textContent = ev.greeting || '';
+  $('rules').textContent = ev.rules || '';
 
   const facts = [['日時', ev.date], ['場所', ev.place], ['会費', ev.fee]];
   if (ev.deadline) facts.push(['回答の締切', ev.deadline]);
@@ -184,7 +227,9 @@ function render(d) {
   $('flow').replaceChildren(lines.length
     ? el('ol', { className: 'flow' }, lines.map((s) => {
         const m = s.match(/^(\d{1,2}[:：]\d{2})\s*[〜~-]?\s*(.*)$/);
-        return el('li', {}, [el('span', { className: 't', textContent: m ? m[1].replace('：', ':') : '' }), el('span', { className: 'dot' }), el('span', { className: 'what', textContent: m ? m[2] : s })]);
+        const li = el('li', {}, [el('span', { className: 't', textContent: m ? m[1].replace('：', ':') : '' }), el('span', { className: 'dot' }), el('span', { className: 'what', textContent: m ? m[2] : s })]);
+        li.style.setProperty('--i', lines.indexOf(s));
+        return li;
       }))
     : el('p', { className: 'empty', textContent: '当日の流れは、決まりしだいここに載せます。' }));
 
@@ -193,6 +238,21 @@ function render(d) {
     : el('p', { className: 'empty', textContent: '今のところ、特に持ち物はありません。' }));
   $('deadline').textContent = ev.deadline ? 'アンケートの締切：' + ev.deadline : '';
 }
+
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function countUp(node, to) {
+  if (REDUCED || !to) { node.textContent = to; return; }
+  const t0 = performance.now() + 1300; // 吹き出しが出てから数える
+  const step = (t) => { const p = Math.max(0, Math.min(1, (t - t0) / 900)); node.textContent = Math.round(to * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+
+// スクロールで各セクションを表示
+const io = 'IntersectionObserver' in window ? new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .15 }) : null;
+document.querySelectorAll('.reveal').forEach((s) => io ? io.observe(s) : s.classList.add('in'));
+
+// ノミィ：ページを開いたら手（泡）をふる
+setTimeout(() => Nomy.play(document.querySelector('#nomy svg'), 'jump'), 1500);
 
 async function load() {
   try {
