@@ -185,6 +185,16 @@ form.ev .count { font-size: 12px; color: var(--sub); text-align: right; }
 .pill.wait { background: var(--gold-soft); color: #9A6A00; }
 .pill.err { background: var(--red-soft); color: var(--red); }
 
+/* 確認カード */
+.modal { position: fixed; inset: 0; z-index: 70; background: rgba(31,42,68,.45); display: grid; place-items: center; padding: 16px; animation: fade .2s ease; }
+.modal.out { opacity: 0; transition: opacity .2s; }
+@keyframes fade { from { opacity: 0; } }
+.modal-card { background: #fff; border-radius: 20px; padding: 20px; max-width: 360px; width: 100%; text-align: center; animation: pop-in .35s cubic-bezier(.3,1.4,.5,1); }
+.modal-card h3 { margin: 6px 0; font-size: 17px; }
+.modal-card p { margin: 0 0 16px; color: var(--sub); font-size: 14px; }
+.modal-mascot { width: 70px; margin: 0 auto; }
+.modal-actions { display: flex; gap: 10px; justify-content: center; }
+
 /* メンバー */
 .members { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .members li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; background: #F7F9FC; }

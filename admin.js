@@ -87,6 +87,24 @@
     setTimeout(() => box.remove(), 1400);
   }
 
+  /** 画面内の確認カード（ブラウザの confirm の代わり）。OK なら true で resolve */
+  function ask(title, body, okText) {
+    return new Promise((resolve) => {
+      const ok = el('button', { type: 'button', className: 'primary', textContent: okText || 'OK' });
+      const cancel = el('button', { type: 'button', className: 'ghost-btn', style: 'color:var(--ink)', textContent: 'やめる' });
+      const card = el('div', { className: 'modal-card', role: 'alertdialog', 'aria-modal': 'true', 'aria-labelledby': 'mdl-t' }, [
+        mascot('wow', 'modal-mascot'), el('h3', { id: 'mdl-t', textContent: title }), el('p', { textContent: body }), el('div', { className: 'modal-actions' }, [cancel, ok]),
+      ]);
+      const wrap = el('div', { className: 'modal' }, [card]);
+      const close = (v) => { wrap.classList.add('out'); setTimeout(() => wrap.remove(), 200); resolve(v); };
+      ok.addEventListener('click', () => close(true));
+      cancel.addEventListener('click', () => close(false));
+      wrap.addEventListener('click', (e) => { if (e.target === wrap) close(false); });
+      document.body.append(wrap);
+      ok.focus();
+    });
+  }
+
   // ---------- 骨組み ----------
   function shell() {
     const reload = el('button', { className: 'icon-btn', id: 'reload', type: 'button', 'aria-label': '最新の回答を読み込む', title: '最新にする' });
@@ -248,7 +266,10 @@
       if (noticeTarget === 'one' && !pick.value) { toast('送る人を選んでください', { err: true }); return; }
       const t = TARGETS.find((x) => x.key === noticeTarget);
       const who = noticeTarget === 'one' ? pick.label + ' さん' : t.label + (counts[noticeTarget] == null ? '' : '（' + counts[noticeTarget] + '人）');
-      if (!confirm(who + ' に送ります。\n送ったあとは取り消せません。よろしいですか？')) return;
+      ask(who + ' に送ります', '送ったあとは取り消せません。よろしいですか？', '送信する').then((yes) => { if (yes) doSend(); });
+    });
+    function doSend() {
+      const body = text.value.trim();
       send.disabled = true; send.classList.add('flying'); send.textContent = '送信中…';
       run().withSuccessHandler((list) => {
         renderHistory(list);
@@ -262,7 +283,7 @@
         send.disabled = false; send.classList.remove('flying'); send.textContent = '送信する';
         toast(err.message, { err: true });
       }).enqueueAnnouncement({ target: noticeTarget, row: pick.value, text: body });
-    });
+    }
 
     view.replaceChildren(
       el('div', { className: 'notice-grid' }, [
@@ -323,10 +344,12 @@
       if (m.isOwner && !isMe) {
         const del = el('button', { type: 'button', className: 'ghost-btn', textContent: '削除', 'aria-label': mail + ' を削除' });
         del.addEventListener('click', () => {
-          if (!confirm(mail + ' を管理者サイトのメンバーから外しますか？\nスプレッドシートの共有も解除されます。')) return;
-          del.disabled = true;
-          run().withSuccessHandler((res) => { renderMembers(res); toast('メンバーから外しました'); })
-            .withFailureHandler((e) => { del.disabled = false; toast(e.message, { err: true }); }).removeMember(mail);
+          ask(mail + ' を外しますか？', '管理者サイトのメンバーから外し、スプレッドシートの共有も解除します。', '外す').then((yes) => {
+            if (!yes) return;
+            del.disabled = true;
+            run().withSuccessHandler((res) => { renderMembers(res); toast('メンバーから外しました'); })
+              .withFailureHandler((e) => { del.disabled = false; toast(e.message, { err: true }); }).removeMember(mail);
+          });
         });
         right.push(del);
       }
