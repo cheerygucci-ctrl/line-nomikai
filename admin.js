@@ -188,6 +188,14 @@
   ];
   let noticeTarget = 'attending';
 
+  function remindTemplate() {
+    const ev = data.event;
+    const lines = ['🍻 いよいよ今日は ' + ev.name + '！', '', '📅 ' + ev.date, '📍 ' + ev.place + (ev.address ? '（' + ev.address + '）' : '')];
+    if (ev.notes) lines.push('', ev.notes);
+    lines.push('', '会場で会えるのを楽しみにしています！', SITE);
+    return lines.join('\n');
+  }
+
   function eventTemplate() {
     const ev = data.event;
     const lines = ['📣 ' + ev.name + ' のお知らせ', '', '📅 日時：' + ev.date, '📍 場所：' + ev.place + (ev.address ? '（' + ev.address + '）' : ''), '💰 会費：' + ev.fee];
@@ -249,6 +257,30 @@
     tpl.addEventListener('click', () => { text.value = eventTemplate(); upd(); text.focus(); });
     const url = el('button', { type: 'button', className: 'chip-btn', textContent: '🔗 イベントサイトのURL' });
     url.addEventListener('click', () => { text.value = (text.value ? text.value.replace(/\s*$/, '') + '\n\n' : '') + SITE; upd(); });
+    const remind = el('button', { type: 'button', className: 'chip-btn', textContent: '🔔 当日リマインド' });
+    remind.addEventListener('click', () => { text.value = remindTemplate(); upd(); text.focus(); });
+    const game = el('button', { type: 'button', className: 'chip-btn', textContent: '🎮 ゲームのお誘い' });
+    game.addEventListener('click', () => { text.value = '🎮 開催までの待ち時間に、ミニゲーム「ノミィの泡キャッチ」で遊ぼう！\n参加者ランキングの1位は誰だ…？🍻\n\nhttps://liff.line.me/2012697224-lfwPcqYm/game.html'; upd(); text.focus(); });
+
+    // いつ送るか：今すぐ／日時を指定して予約
+    const whenNow = el('input', { type: 'radio', name: 'when', id: 'when-now', checked: true });
+    const whenLater = el('input', { type: 'radio', name: 'when', id: 'when-later' });
+    const at = el('input', { type: 'datetime-local', 'aria-label': '予約日時', className: 'at', disabled: true });
+    const syncWhen = () => {
+      at.disabled = !whenLater.checked;
+      send.textContent = whenLater.checked ? '予約する' : '送信する';
+      if (whenLater.checked && !at.value) {
+        // 初期値：開催日の朝9時（なければ明日の9時）
+        const d = /^\d{4}-\d{2}-\d{2}$/.test(data.event.eventDate || '') ? data.event.eventDate : new Date(Date.now() + 33 * 3600 * 1000).toISOString().slice(0, 10);
+        at.value = d + 'T09:00';
+      }
+    };
+    whenNow.addEventListener('change', syncWhen);
+    whenLater.addEventListener('change', syncWhen);
+    const when = el('div', { className: 'when' }, [
+      el('div', { className: 'when-opts' }, [whenNow, el('label', { htmlFor: 'when-now', textContent: '⚡ 今すぐ送る' }), whenLater, el('label', { htmlFor: 'when-later', textContent: '⏰ 日時を指定して予約' })]),
+      at,
+    ]);
 
     const quota = el('p', { className: 'note quota' });
     function updateCount() {
@@ -266,13 +298,25 @@
       if (noticeTarget === 'one' && !pick.value) { toast('送る人を選んでください', { err: true }); return; }
       const t = TARGETS.find((x) => x.key === noticeTarget);
       const who = noticeTarget === 'one' ? pick.label + ' さん' : t.label + (counts[noticeTarget] == null ? '' : '（' + counts[noticeTarget] + '人）');
-      ask(who + ' に送ります', '送ったあとは取り消せません。よろしいですか？', '送信する').then((yes) => { if (yes) doSend(); });
+      if (whenLater.checked) {
+        if (!at.value) { toast('予約する日時を選んでください', { err: true }); return; }
+        const label = at.value.replace('T', ' ').replace(/^(\d{4})-(\d{2})-(\d{2})/, '$2/$3');
+        ask(label + ' に予約します', who + ' に送ります。送信前なら履歴から取り消せます。', '予約する').then((yes) => { if (yes) doSend(at.value); });
+        return;
+      }
+      ask(who + ' に送ります', '送ったあとは取り消せません。よろしいですか？', '送信する').then((yes) => { if (yes) doSend(''); });
     });
-    function doSend() {
+    function doSend(scheduledAt) {
       const body = text.value.trim();
       send.disabled = true; send.classList.add('flying'); send.textContent = '送信中…';
       run().withSuccessHandler((list) => {
         renderHistory(list);
+        if (scheduledAt) {
+          send.disabled = false; send.classList.remove('flying'); syncWhen();
+          text.value = ''; upd();
+          toast('予約しました！⏰'); confetti();
+          return;
+        }
         flush().then(() => {
           send.disabled = false; send.classList.remove('flying'); send.textContent = '送信する';
           text.value = ''; upd();
@@ -282,14 +326,14 @@
       }).withFailureHandler((err) => {
         send.disabled = false; send.classList.remove('flying'); send.textContent = '送信する';
         toast(err.message, { err: true });
-      }).enqueueAnnouncement({ target: noticeTarget, row: pick.value, text: body });
+      }).enqueueAnnouncement({ target: noticeTarget, row: pick.value, text: body, scheduledAt: scheduledAt || '' });
     }
 
     view.replaceChildren(
       el('div', { className: 'notice-grid' }, [
         el('div', {}, [
           stagger(el('div', { className: 'panel' }, [el('h2', { textContent: '① 宛先' }), targets, pick]), 0),
-          stagger(el('div', { className: 'panel wide' }, [el('h2', { textContent: '② メッセージ' }), el('div', { className: 'chips-row' }, [tpl, url]), text, count, quota, el('div', { className: 'savebar' }, [send])]), 1),
+          stagger(el('div', { className: 'panel wide' }, [el('h2', { textContent: '② メッセージ' }), el('div', { className: 'chips-row' }, [tpl, remind, game, url]), text, count, quota, when, el('div', { className: 'savebar' }, [send])]), 1),
         ]),
         stagger(el('div', { className: 'panel prevpanel' }, [el('h2', { textContent: '📱 LINEでの見え方' }), prev]), 2),
       ]),
@@ -308,20 +352,34 @@
     const box = $('history');
     if (!box) return;
     if (!list.length) { box.replaceChildren(el('p', { className: 'empty', textContent: 'まだお知らせは送っていません。' })); return; }
-    const cls = { '送信済み': 'yes', 'エラー': 'err', '送信待ち': 'wait', '送信中': 'wait' };
+    const cls = { '送信済み': 'yes', 'エラー': 'err', '送信待ち': 'wait', '送信中': 'wait', '予約': 'resv', '取り消し': 'no' };
     box.replaceChildren(el('ul', { className: 'history' }, list.map((n, i) => {
       const head = el('div', { className: 'h-head' }, [
         el('span', { className: 'pill ' + (cls[n.status] || 'no'), textContent: n.status }),
         el('b', { textContent: n.targetLabel }),
         el('small', { textContent: (n.sentAt || n.at) + (n.count ? '・' + n.count + (n.count === '全員' ? '' : '人') : '') + '・' + n.by }),
       ]);
-      const kids = [head, el('p', { className: 'h-text', textContent: n.text })];
+      const kids = [head];
+      if (n.status === '予約' && n.scheduledAt) kids.push(el('p', { className: 'h-when', textContent: '⏰ ' + n.scheduledAt.replace('T', ' ') + ' に送信予定' }));
+      kids.push(el('p', { className: 'h-text', textContent: n.text }));
       if (n.error) kids.push(el('p', { className: 'h-err', textContent: '⚠️ ' + n.error }));
+      const acts = [];
       if (n.status === '送信待ち') {
         const b = el('button', { type: 'button', className: 'ghost-btn', textContent: '今すぐ送る' });
         b.addEventListener('click', () => { b.disabled = true; flush().then(loadHistory); });
-        kids.push(b);
+        acts.push(b);
       }
+      if (n.status === '予約' || n.status === '送信待ち') {
+        const c = el('button', { type: 'button', className: 'ghost-btn', textContent: '取り消す' });
+        c.addEventListener('click', () => ask('このお知らせを取り消しますか？', '取り消したお知らせは送られません。', '取り消す').then((yes) => {
+          if (!yes) return;
+          c.disabled = true;
+          run().withSuccessHandler((list) => { renderHistory(list); toast('取り消しました'); })
+            .withFailureHandler((e) => { c.disabled = false; toast(e.message, { err: true }); }).cancelAnnouncement(n.id);
+        }));
+        acts.push(c);
+      }
+      if (acts.length) kids.push(el('div', { className: 'h-acts' }, acts));
       return stagger(el('li', {}, kids), i);
     })));
   }
@@ -397,6 +455,12 @@
     }));
   }
 
+  function ageGroup(age) {
+    const n = Number(age);
+    if (!age || !(n >= 20)) return '';
+    return n < 30 ? '20代' : n < 40 ? '30代' : n < 50 ? '40代' : '50代以上';
+  }
+
   function renderSummary() {
     const A = data.answers;
     const going = A.filter((a) => a.attend === '参加');
@@ -420,6 +484,7 @@
       panel('🍺 お酒（参加する人）', emptyOr(going.length, bars(['飲む', '少し', '飲まない', ''], (k) => going.filter((a) => a.drink === k).length), 'まだ参加の回答がありません。')),
       panel('⚠️ 食べられないもの・アレルギー', emptyOr(ng.length, el('ul', { className: 'chips red' }, ng.map((a, i) => stagger(el('li', {}, [el('b', { textContent: a.nickname }), '：' + a.ng]), i))), '今のところ申告はありません。')),
       panel('🎯 参加の目的（複数回答）', emptyOr(A.length, bars(['交流したい', '仕事の話を聞きたい', '夢・目標を話したい', 'その他'], (k) => A.filter((a) => (a.purpose || '').split('、').includes(k)).length), 'まだ回答がありません。')),
+      panel('🎂 年代', emptyOr(A.length, bars(['20代', '30代', '40代', '50代以上', ''], (k) => A.filter((a) => ageGroup(a.age) === k).length), 'まだ回答がありません。')),
       panel('💼 職業', emptyOr(A.length, bars(['会社員', '経営者・役員', '個人事業主・フリーランス', '公務員', '学生', 'パート・アルバイト', 'その他', ''], (k) => A.filter((a) => (a.job || '') === k).length), 'まだ回答がありません。')),
       panel('📣 知ったきっかけ', emptyOr(A.length, bars(['知り合いの紹介', 'SNS', 'その他', ''], (k) => A.filter((a) => (a.referral || '') === k).length), 'まだ回答がありません。')),
     ].map(stagger));
@@ -439,6 +504,7 @@
   }
 
   const DETAIL = [
+    ['年齢', (a) => (a.age ? a.age + '歳' : '')],
     ['職業', (a) => (a.job || '') + (a.jobDetail ? '（' + a.jobDetail + '）' : '')], ['LINE名', 'lineName'], ['回答日時', 'at'], ['知ったきっかけ', (a) => (a.referral || '') + (a.referrer ? '（' + a.referrer + '）' : '')],
     ['参加の目的', 'purpose'], ['仕事でつながりたい人', 'connect'], ['お酒', 'drink'], ['NG・アレルギー', 'ng'],
     ['夢・やりたいこと', 'dream'], ['目標', 'goal'], ['ひとこと', 'comment'],
@@ -455,12 +521,13 @@
     const draw = () => {
       const list = filtered(search.value);
       const table = el('div', { className: 'tablewrap' }, [el('table', {}, [
-        el('thead', {}, [el('tr', {}, ['回答日時', 'ニックネーム', 'LINE名', '参加', '職業', '知ったきっかけ', '参加の目的', '仕事でつながりたい人', 'お酒', 'NG・アレルギー', '夢・やりたいこと', '目標', 'ひとこと'].map((h) => el('th', { textContent: h })))]),
+        el('thead', {}, [el('tr', {}, ['回答日時', 'ニックネーム', 'LINE名', '参加', '年齢', '職業', '知ったきっかけ', '参加の目的', '仕事でつながりたい人', 'お酒', 'NG・アレルギー', '夢・やりたいこと', '目標', 'ひとこと'].map((h) => el('th', { textContent: h })))]),
         el('tbody', {}, list.map((a, i) => stagger(el('tr', {}, [
           el('td', { textContent: a.at }), el('td', { textContent: a.nickname }), el('td', { textContent: a.lineName }),
           el('td', {}, [el('span', { className: 'pill ' + (a.attend === '参加' ? 'yes' : 'no'), textContent: a.attend })]),
-          el('td', { className: 'long', textContent: val(a, DETAIL[0][1]) || '—' }),
-          el('td', { textContent: val(a, DETAIL[3][1]) || '—' }), el('td', { className: 'long', textContent: a.purpose }),
+          el('td', { textContent: a.age ? a.age + '歳' : '—' }),
+          el('td', { className: 'long', textContent: val(a, DETAIL[1][1]) || '—' }),
+          el('td', { textContent: val(a, DETAIL[4][1]) || '—' }), el('td', { className: 'long', textContent: a.purpose }),
           el('td', { className: 'long', textContent: a.connect }), el('td', { textContent: a.drink || '—' }),
           el('td', { className: 'long', textContent: a.ng }), el('td', { className: 'long', textContent: a.dream }),
           el('td', { className: 'long', textContent: a.goal }), el('td', { className: 'long', textContent: a.comment }),
@@ -471,7 +538,7 @@
         const head = el('button', { type: 'button', 'aria-expanded': 'false' }, [
           el('span', { className: 'who', textContent: a.nickname }),
           el('span', {}, [el('span', { className: 'pill ' + (a.attend === '参加' ? 'yes' : 'no'), textContent: a.attend }), el('span', { className: 'chev', 'aria-hidden': 'true', textContent: ' ▾' })]),
-          el('span', { className: 'meta', textContent: [a.job ? '💼 ' + a.job : '', a.purpose, a.connect ? '🤝 ' + a.connect : ''].filter(Boolean).join('　') || a.at }),
+          el('span', { className: 'meta', textContent: [a.age ? a.age + '歳' : '', a.job ? '💼 ' + a.job : '', a.purpose, a.connect ? '🤝 ' + a.connect : ''].filter(Boolean).join('　') || a.at }),
         ]);
         head.addEventListener('click', () => { const open = card.classList.toggle('open'); head.setAttribute('aria-expanded', String(open)); });
         const dl = el('dl', {}, DETAIL.flatMap(([label, f]) => [el('dt', { textContent: label }), el('dd', { textContent: val(a, f) || '—' })]));
@@ -499,7 +566,7 @@
             if (a.dream) dl.append(el('dt', { textContent: '🌟 夢・やりたいこと' }), el('dd', { textContent: a.dream }));
             if (a.goal) dl.append(el('dt', { textContent: '🎯 目標' }), el('dd', { textContent: a.goal }));
             if (a.connect) dl.append(el('dt', { textContent: '🤝 仕事でつながりたい人' }), el('dd', { textContent: a.connect }));
-            return stagger(el('div', { className: 'dream' }, [el('div', { className: 'who', textContent: a.nickname + (a.attend === '参加' ? '' : '（不参加）') }), a.job ? el('div', { className: 'note', style: 'margin:-4px 0 6px', textContent: '💼 ' + val(a, DETAIL[0][1]) }) : null, dl]), i);
+            return stagger(el('div', { className: 'dream' }, [el('div', { className: 'who', textContent: a.nickname + (a.attend === '参加' ? '' : '（不参加）') }), a.job ? el('div', { className: 'note', style: 'margin:-4px 0 6px', textContent: (a.age ? a.age + '歳・' : '') + '💼 ' + val(a, DETAIL[1][1]) }) : null, dl]), i);
           }))
         : el('p', { className: 'empty', textContent: 'まだ書いてくれた人はいません。' }));
   }
@@ -510,7 +577,7 @@
       const id = 'ev-' + fd.key;
       const input = LONG_KEYS.includes(fd.key)
         ? el('textarea', { id, name: fd.key, maxLength: fd.max })
-        : el('input', { id, name: fd.key, type: fd.key === 'mapUrl' ? 'url' : 'text', maxLength: fd.max });
+        : el('input', { id, name: fd.key, type: fd.key === 'mapUrl' ? 'url' : fd.key === 'eventDate' ? 'date' : 'text', maxLength: fd.max });
       input.value = data.event[fd.key] || '';
       const count = el('div', { className: 'count', textContent: input.value.length + ' / ' + fd.max });
       input.addEventListener('input', () => { count.textContent = input.value.length + ' / ' + fd.max; });

@@ -85,6 +85,16 @@
     font-weight: 900; font-size: 17px; border-radius: 999px; padding: 14px; box-shadow: 0 4px 0 #A8381A;
   }
   .cta a:focus-visible, .btn-map:focus-visible { outline: 3px solid var(--beer); outline-offset: 2px; }
+  .cd { display: inline-block; margin-top: 8px; background: rgba(255,255,255,.1); border-radius: 999px; padding: 4px 14px; font-weight: 700; color: #fff; }
+  .cd b { color: var(--beer); font-size: 22px; font-variant-numeric: tabular-nums; margin: 0 2px; }
+  .js .cd { animation: rise-in .6s cubic-bezier(.2,.8,.2,1) .65s both; }
+  .game { display: grid; grid-template-columns: 90px 1fr; gap: 12px; align-items: center; background: var(--night); color: #fff; border-radius: 18px; padding: 14px 16px; text-decoration: none; position: relative; overflow: hidden; }
+  .game .gn { width: 90px; }
+  .game b { font-size: 18px; display: block; }
+  .game small { color: #C9D2E4; }
+  .game .go { display: inline-block; margin-top: 8px; background: var(--beer); color: var(--ink); border-radius: 999px; padding: 6px 16px; font-weight: 900; }
+  .game .fall { position: absolute; top: -20px; font-size: 18px; animation: drop2 3s linear infinite; opacity: .8; }
+  @keyframes drop2 { to { transform: translateY(160px) rotate(40deg); } }
   .deadline { text-align: center; color: var(--sub); font-size: 14px; font-weight: 700; margin-top: 8px; }
   .err { background: #fff; border-left: 6px solid var(--lantern); border-radius: 12px; padding: 12px; font-weight: 700; }
   .skeleton { color: transparent; background: rgba(255,255,255,.18); border-radius: 8px; }
@@ -133,6 +143,7 @@
   <h1 id="name"><span class="skeleton">イベント名を読み込み中</span></h1>
   <span class="when" id="date">…</span>
   <p class="place" id="placeTop"></p>
+  <div class="cd" id="cd" hidden></div>
   <div class="nomy-row">
     <div class="nomy-box" id="nomy"></div>
     <p class="count" id="count" aria-live="polite">いま<br><b>–</b> 人が参加予定！</p>
@@ -144,6 +155,15 @@
   <section class="reveal" aria-labelledby="h-about">
     <h2 id="h-about"><span class="ic" aria-hidden="true">🍻</span>この会について</h2>
     <div class="about"><p id="greet"></p><div class="rules"><b>参加ルール</b><p id="rules"></p></div></div>
+  </section>
+
+  <section class="reveal" aria-labelledby="h-game">
+    <h2 id="h-game"><span class="ic" aria-hidden="true">🎮</span>待ちきれない人へ</h2>
+    <a class="game" href="https://liff.line.me/2012697224-lfwPcqYm/game.html">
+      <span class="fall" style="left:40%;animation-delay:-.5s" aria-hidden="true">🫧</span><span class="fall" style="left:70%;animation-delay:-1.8s" aria-hidden="true">🫛</span><span class="fall" style="left:88%;animation-delay:-2.6s" aria-hidden="true">🍗</span>
+      <span class="gn" id="gameNomy"></span>
+      <span><b>ノミィの泡キャッチ</b><small>アンケートに答えた人だけが遊べるミニゲーム。参加者ランキングで1位を目指そう！</small><br><span class="go">遊んでみる</span></span>
+    </a>
   </section>
 
   <section class="reveal" aria-labelledby="h-basic">
@@ -177,7 +197,8 @@ const SAMPLE = {
   ok: true, attending: 12,
   event: {
     name: '年末だよ！みんなで忘年会', date: '12/20(土) 19:00〜', place: '居酒屋 のんき 渋谷店', address: '東京都渋谷区道玄坂1-2-3 のんきビル2F',
-    fee: '4,000円（飲み放題つき）', mapUrl: '', deadline: '12/13(土)まで',
+    fee: '4,000円（飲み放題つき）', mapUrl: '',
+    deadline: '12/13(土)まで', eventDate: '2026-12-20',
     schedule: '18:45 受付\n19:00 カンパイ！\n19:30 自己紹介タイム\n20:30 夢・目標シェア\n21:00 締め・集合写真',
     greeting: 'この会は、お酒を飲みながら「将来の夢」や「これからの働き方」を気軽に語り合う交流会です。',
     rules: '・セクハラ、パワハラ、しつこい勧誘・営業は禁止です\n・守れない場合は途中で退場していただき、次回以降も参加できません\n・お酒の席なので、20歳未満の方は参加できません',
@@ -189,6 +210,7 @@ const el = (tag, props, kids) => { const e = Object.assign(document.createElemen
 
 Nomy.installCSS();
 $('nomy').innerHTML = Nomy.svg({ id: 'ev', face: 'happy' });
+$('gameNomy').innerHTML = Nomy.svg({ id: 'gm', face: 'wink' });
 
 function isSet(v) { return v && v !== '未定'; }
 
@@ -202,6 +224,15 @@ function render(d) {
   $('count').replaceChildren('いま', el('br'), num, ' 人が参加予定！');
   countUp(num, d.attending);
   $('greet').textContent = ev.greeting || '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(ev.eventDate || '')) {
+    const now = new Date(Date.now() + 9 * 3600 * 1000);
+    const [y, m, d] = ev.eventDate.split('-').map(Number);
+    const left = Math.round((Date.UTC(y, m - 1, d) - Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())) / 86400000);
+    if (left >= 0) {
+      $('cd').hidden = false;
+      $('cd').replaceChildren(...(left > 0 ? ['開催まで あと', el('b', { textContent: left }), '日'] : ['🎉 今日が開催日！']));
+    }
+  }
   $('rules').textContent = ev.rules || '';
 
   const facts = [['日時', ev.date], ['場所', ev.place], ['会費', ev.fee]];

@@ -111,6 +111,9 @@
   .agree { display: flex; gap: 10px; align-items: flex-start; font-weight: 700; padding: 12px 14px; border-radius: 14px; border: 2px dashed #F1DFB2; cursor: pointer; }
   .agree input { width: 24px; height: 24px; accent-color: var(--lantern); flex: none; margin: 0; }
   .agree:has(input:checked) { border-style: solid; border-color: var(--lantern); background: #FFF6F2; }
+  .age-row { display: flex; align-items: center; gap: 10px; }
+  .age-row input { max-width: 140px; font-size: 26px; font-weight: 900; text-align: center; }
+  .age-row .unit { font-size: 20px; font-weight: 900; }
   .sub-input { display: none; } .sub-input.show { display: block; animation: slide .3s ease; }
   .multi input[type=checkbox] { position: absolute; opacity: 0; pointer-events: none; }
   .multi input:checked + label { background: #fff; border-color: var(--beer-bottom); box-shadow: 0 4px 0 var(--beer-bottom); transform: translateY(-2px); }
@@ -150,6 +153,7 @@
   .done p { margin: 0 0 18px; color: var(--ink-soft); font-weight: 700; }
   .done .btn { flex: 0 0 auto; min-width: 240px; }
   .done a.sub { margin-top: 14px; color: var(--ink); font-weight: 700; }
+  .done .game-btn { margin-top: 10px; background: #fff; color: var(--ink); text-decoration: none; box-shadow: 0 4px 0 rgba(74,42,10,.25); flex: 0 0 auto; min-width: 240px; text-align: center; }
   .confetti { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
   .confetti i { position: absolute; top: -20px; left: var(--x); width: 9px; height: 14px; background: var(--c); border-radius: 2px;
     animation: fall var(--d) linear var(--delay) forwards; }
@@ -202,12 +206,10 @@
       <div class="nav"><button type="button" class="btn ghost" data-back>もどる</button><button type="button" class="btn" data-next>つぎへ</button></div>
     </section>
 
-    <section class="step" data-step="adult" data-say="お酒の席だから、念のため確認させてね">
-      <p class="q" id="adultQ">20歳以上ですか？<span class="tag req">必須</span></p>
-      <div class="choices" role="radiogroup" aria-labelledby="adultQ">
-        <input type="radio" id="ad1" name="adult" value="はい"><label for="ad1"><span class="em">🙆</span>はい、20歳以上です</label>
-        <input type="radio" id="ad2" name="adult" value="いいえ"><label for="ad2"><span class="em">🙅</span>いいえ</label>
-      </div>
+    <section class="step" data-step="adult" data-say="お酒の席だから、年齢を教えてね">
+      <label class="q" for="age">年齢は？<span class="tag req">必須</span></label>
+      <div class="age-row"><input type="text" inputmode="numeric" pattern="[0-9]*" id="age" name="age" maxlength="2" placeholder="例：28" enterkeyhint="next" autocomplete="off"><span class="unit">歳</span></div>
+      <input type="hidden" name="adult" id="adult">
       <div class="stop" id="stop">ごめんね、お酒の席なので<br>20歳以上の人だけの会なんだ。<br>また大人になったら遊びに来てね！</div>
       <p class="err" data-err></p>
       <div class="nav"><button type="button" class="btn ghost" data-back>もどる</button><button type="button" class="btn" data-next>つぎへ</button></div>
@@ -224,7 +226,7 @@
         <input type="radio" id="j6" name="job" value="パート・アルバイト"><label for="j6"><span class="em">🧑‍🍳</span>パート・アルバイト</label>
         <input type="radio" id="j7" name="job" value="その他"><label for="j7"><span class="em">💭</span>その他</label>
       </div>
-      <label class="hint" for="jobDetail">業種・職種（任意）</label>
+      <label class="hint" for="jobDetail">業種・職種 <span class="tag req">必須</span></label>
       <input type="text" id="jobDetail" name="jobDetail" maxlength="60" placeholder="例：IT・Webエンジニア、美容・ネイリスト" enterkeyhint="next">
       <p class="err" data-err></p>
       <div class="nav"><button type="button" class="btn ghost" data-back>もどる</button><button type="button" class="btn" data-next>つぎへ</button></div>
@@ -293,10 +295,11 @@
     </section>
 
     <section class="step" data-step="dream" data-say="ねえねえ、将来の夢ってある？✨" data-face="sparkle">
-      <label class="q" for="dream">将来の夢・やりたいこと<span class="tag opt">任意</span></label>
+      <label class="q" for="dream">将来の夢・やりたいこと<span class="tag req">必須</span></label>
       <p class="hint">大きな夢でも、小さなやりたいことでも！</p>
       <textarea id="dream" name="dream" maxlength="1000" placeholder="例：いつか自分のカフェを開きたい"></textarea>
       <div class="count" data-for="dream"></div>
+      <p class="err" data-err></p>
       <div class="nav"><button type="button" class="btn ghost" data-back>もどる</button><button type="button" class="btn" data-next>つぎへ</button></div>
     </section>
 
@@ -335,6 +338,7 @@
   <h2 id="doneTitle">回答ありがとうございます！</h2>
   <p>トークにもどると、メニューが出てるよ🍻</p>
   <button type="button" class="btn" id="close">トークにもどる</button>
+  <a class="btn game-btn" href="game.html">🎮 ミニゲームで遊ぶ</a>
   <a class="sub" href="event.html">イベントの詳細を見る</a>
   <div class="confetti" id="confetti" aria-hidden="true"></div>
 </div>
@@ -346,7 +350,7 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycby45UwD6Ymwvnf_D_4vMbUG
 // ?preview=1 で LINE につながずに見た目だけ確認できる（送信もしない）
 const params = new URLSearchParams(location.search);
 const PREVIEW = params.has('preview');
-const FIELDS = ['nickname', 'attend', 'drink', 'ng', 'dream', 'goal', 'comment', 'referral', 'referrer', 'adult', 'connect', 'job', 'jobDetail'];
+const FIELDS = ['nickname', 'attend', 'drink', 'ng', 'dream', 'goal', 'comment', 'referral', 'referrer', 'adult', 'connect', 'job', 'jobDetail', 'age'];
 const SAMPLE_EVENT = {
   greeting: 'この会は、お酒を飲みながら「将来の夢」や「これからの働き方」を気軽に語り合う交流会です。\nまずはかんたんなアンケートに答えてね！',
   rules: '・セクハラ、パワハラ、しつこい勧誘・営業は禁止です\n・守れない場合は途中で退場していただき、次回以降も参加できません\n・お酒の席なので、20歳未満の方は参加できません',
@@ -414,10 +418,18 @@ function check(s) {
   let msg = '';
   if (k === 'nickname' && !form.elements.nickname.value.trim()) msg = 'お名前を入れてね';
   if (k === 'attend' && !form.elements.attend.value) msg = 'どちらか選んでね';
-  if (k === 'adult' && !form.elements.adult.value) msg = 'どちらか選んでね';
-  if (k === 'adult' && form.elements.adult.value === 'いいえ') { msg = ' '; }
+  if (k === 'adult') {
+    const v = form.elements.age.value.trim().replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+    form.elements.age.value = v;
+    if (!/^\d{1,2}$/.test(v)) msg = '年齢を数字で入れてね';
+    else if (Number(v) < 20) { form.elements.adult.value = 'いいえ'; $('stop').classList.add('show'); msg = ' '; }
+    else { form.elements.adult.value = 'はい'; $('stop').classList.remove('show'); }
+  }
+  if (k === 'job' && form.elements.job.value && !form.elements.jobDetail.value.trim()) msg = '業種・職種も書いてね';
+  if (k === 'dream' && !form.elements.dream.value.trim()) msg = '夢やりたいこと、ひとことでもOKだよ！';
   if (k === 'referral' && !form.elements.referral.value) msg = 'ひとつ選んでね';
   if (k === 'job' && !form.elements.job.value) msg = 'ひとつ選んでね';
+
   if (k === 'purpose' && !purposes().length) msg = 'ひとつ以上選んでね';
   if (k === 'agree' && !$('agree').checked) msg = 'ルールに同意してね';
   if (msg === ' ') { say('ごめんね…お酒の席だから20歳以上の人だけなんだ', 'sad', 'droop'); return false; }
@@ -440,7 +452,7 @@ function purposes() { return [...form.querySelectorAll('input[name=purpose]:chec
 
 const REACT = {
   job: { '会社員': ['毎日おつかれさま！', 'happy', 'wiggle'], '経営者・役員': ['社長さんだ…！', 'wow', 'jump'], '個人事業主・フリーランス': ['自分の力で働いてるのかっこいい！', 'sparkle', 'jump'], '公務員': ['いつもありがとう！', 'happy', 'wiggle'], '学生': ['学生さんいらっしゃい！', 'happy', 'jump'], 'パート・アルバイト': ['いいね、おつかれさま！', 'happy', 'wiggle'], 'その他': ['いろんな人がいて楽しいね！', 'wink', 'wiggle'] },
-  adult: { 'はい': ['ありがとう！', 'happy', 'wiggle'], 'いいえ': ['ごめんね…お酒の席だから20歳以上の人だけなんだ', 'sad', 'droop'] },
+
   referral: { '知り合いの紹介': ['いい人に誘われたね！よかったら名前も教えて', 'happy', 'jump'], 'SNS': ['見つけてくれてありがとう！', 'wink', 'wiggle'], 'その他': ['なるほど〜！', 'normal', 'wiggle'] },
   attend: { '参加': ['やったー！待ってるね！', 'happy', 'jump'], '不参加': ['そっかぁ…また今度ね！', 'sad', 'droop'] },
   drink: { '飲む': ['いいね、いっぱいカンパイしよ！', 'happy', 'jump'], '少し': ['ほどほどがいちばん！', 'wink', 'wiggle'], '飲まない': ['ソフドリでも楽しもうね！', 'happy', 'wiggle'] },
@@ -448,7 +460,7 @@ const REACT = {
 form.addEventListener('change', (e) => {
   const r = REACT[e.target.name] && REACT[e.target.name][e.target.value];
   if (r) say(r[0], r[1], r[2]);
-  if (e.target.name === 'adult') { $('stop').classList.toggle('show', e.target.value === 'いいえ'); }
+
   if (e.target.name === 'referral') { $('referrerBox').classList.toggle('show', e.target.value === '知り合いの紹介'); }
   if (e.target.name === 'purpose' && e.target.checked) {
     const m = { '交流したい': ['友だち、たくさんできるといいね！', 'happy', 'jump'], '仕事の話を聞きたい': ['お仕事の話、楽しみにしててね！', 'sparkle', 'jump'], '夢・目標を話したい': ['語ろう語ろう！✨', 'sparkle', 'wiggle'], 'その他': ['いいね！', 'wink', 'wiggle'] }[e.target.value];
@@ -510,7 +522,7 @@ function banner(msg) {
 async function api(body) {
   if (PREVIEW) {
     await new Promise((r) => setTimeout(r, 500));
-    return body.type === 'load' ? { ok: true, answer: params.has('again') ? { nickname: 'ありす', attend: '参加', drink: '少し', ng: '', dream: '', goal: '', comment: '', adult: 'はい', referral: '知り合いの紹介', referrer: 'たろう', purpose: ['交流したい'], agree: true, connect: '', job: '会社員', jobDetail: '' } : null } : { ok: true };
+    return body.type === 'load' ? { ok: true, answer: params.has('again') ? { nickname: 'ありす', attend: '参加', drink: '少し', ng: '', dream: '', goal: '', comment: '', adult: 'はい', referral: '知り合いの紹介', referrer: 'たろう', purpose: ['交流したい'], agree: true, connect: '', job: '会社員', jobDetail: '営業', age: '28', dream: '世界一周' } : null } : { ok: true };
   }
   const res = await fetch(GAS_URL, {
     method: 'POST',
@@ -525,7 +537,7 @@ form.addEventListener('submit', async (e) => {
   banner('');
   const v = getValues();
   if (!v.nickname) { go(visibleSteps().findIndex((s) => s.dataset.step === 'nickname'), -1); return check(current()); }
-  for (const k of ['adult', 'job', 'referral', 'attend', 'purpose', 'agree']) {
+  for (const k of ['adult', 'job', 'referral', 'attend', 'purpose', 'dream', 'agree']) {
     const i = visibleSteps().findIndex((s) => s.dataset.step === k);
     if (!check(visibleSteps()[i])) { go(i, -1); return check(current()); }
   }

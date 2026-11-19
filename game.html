@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>ノミィの泡キャッチ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script src="nomy.js"></script>
+<style>
+  :root {
+    --night: #1F2A44;
+    --night-2: #2B3A5C;
+    --beer: #F6B93B;
+    --lantern: #E4572E;
+    --paper: #FFF6DE;
+    --ink: #2A1C0C;
+    --sub: #C9D2E4;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: radial-gradient(120% 70% at 50% 0%, var(--night-2), var(--night));
+    color: #fff; font-family: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Hiragino Sans", sans-serif;
+    overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none;
+  }
+  .screen { position: fixed; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center;
+    padding: calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom)); text-align: center; }
+  .screen.on { display: flex; animation: in .35s ease; }
+  @keyframes in { from { opacity: 0; transform: scale(.97); } }
+  .lanterns { position: fixed; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; padding: 0 12px; pointer-events: none; z-index: 1; }
+  .lanterns span { width: 30px; height: 40px; border-radius: 50%; background: var(--lantern); box-shadow: 0 0 18px rgba(228,87,46,.6); transform-origin: 50% -20px; animation: sway 3s ease-in-out infinite; }
+  .lanterns span:nth-child(2) { background: var(--beer); box-shadow: 0 0 18px rgba(246,185,59,.6); animation-delay: -1s; }
+  .lanterns span:nth-child(3) { animation-delay: -2s; }
+  @keyframes sway { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+
+  .title { font-size: clamp(26px, 8vw, 36px); font-weight: 900; line-height: 1.2; margin: 6px 0; }
+  .title small { display: block; font-size: 14px; color: var(--sub); font-weight: 700; margin-top: 4px; }
+  .hero-nomy { width: 130px; margin: 6px auto 0; }
+  .countdown { display: inline-flex; align-items: baseline; gap: 6px; background: rgba(255,255,255,.08); border-radius: 999px; padding: 6px 16px; font-weight: 700; margin: 8px 0; }
+  .countdown b { font-size: 26px; color: var(--beer); font-variant-numeric: tabular-nums; }
+  .card { background: var(--paper); color: var(--ink); border-radius: 20px; padding: 14px 16px; width: 100%; max-width: 380px; margin-top: 10px; text-align: left; }
+  .card h2 { margin: 0 0 8px; font-size: 15px; }
+  .me { display: flex; justify-content: space-between; align-items: center; font-weight: 900; }
+  .me .best { font-size: 26px; color: var(--lantern); font-variant-numeric: tabular-nums; }
+  ol.rank { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  ol.rank li { display: grid; grid-template-columns: 30px 1fr auto; gap: 8px; align-items: center; padding: 4px 6px; border-radius: 10px; font-weight: 700; }
+  ol.rank li.mine { background: #FFE6A8; }
+  ol.rank .no { text-align: center; font-weight: 900; }
+  ol.rank li:nth-child(1) .no::before { content: "🥇"; } ol.rank li:nth-child(2) .no::before { content: "🥈"; } ol.rank li:nth-child(3) .no::before { content: "🥉"; }
+  ol.rank li:nth-child(-n+3) .no span { display: none; }
+  ol.rank .sc { font-variant-numeric: tabular-nums; }
+  .empty { color: #8A7B6E; font-size: 14px; margin: 0; }
+  .rules { font-size: 13px; color: var(--sub); margin: 10px 0 0; line-height: 1.7; }
+  .btn { margin-top: 14px; border: 0; border-radius: 999px; padding: 15px 30px; min-width: 240px; font: inherit; font-weight: 900; font-size: 18px;
+    background: var(--beer); color: var(--ink); box-shadow: 0 5px 0 #B8820F; cursor: pointer; }
+  .btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #B8820F; }
+  .btn.ghost { background: transparent; color: #fff; box-shadow: none; border: 2px solid rgba(255,255,255,.4); font-size: 15px; padding: 10px 24px; margin-top: 10px; }
+  .btn:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+  .start-pulse { animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+  /* プレイ中 */
+  #play { padding: 0; justify-content: flex-start; }
+  .hud { position: relative; z-index: 3; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: calc(10px + env(safe-area-inset-top)) 16px 8px; font-weight: 900; }
+  .hud .score { font-size: 30px; color: var(--beer); font-variant-numeric: tabular-nums; }
+  .hud .time { font-size: 18px; background: rgba(255,255,255,.12); border-radius: 999px; padding: 2px 12px; font-variant-numeric: tabular-nums; }
+  .hud .time.hurry { color: var(--lantern); animation: pulse .5s infinite; }
+  .timebar { position: relative; z-index: 3; height: 6px; width: calc(100% - 32px); background: rgba(255,255,255,.12); border-radius: 3px; overflow: hidden; }
+  .timebar i { display: block; height: 100%; width: 100%; background: var(--beer); transform-origin: left; }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .player { position: absolute; bottom: calc(14px + env(safe-area-inset-bottom)); left: 0; width: 86px; z-index: 2; pointer-events: none; will-change: transform; }
+  .ready { position: absolute; inset: 0; display: grid; place-items: center; font-size: 72px; font-weight: 900; color: var(--beer); text-shadow: 0 6px 0 rgba(0,0,0,.3); z-index: 4; pointer-events: none; }
+  .ready.go { animation: go .7s ease forwards; }
+  @keyframes go { from { transform: scale(.4); opacity: 0; } 40% { transform: scale(1.15); opacity: 1; } to { transform: scale(1); opacity: 1; } }
+  .hint { position: absolute; bottom: calc(110px + env(safe-area-inset-bottom)); left: 0; right: 0; z-index: 3; font-size: 13px; color: var(--sub); pointer-events: none; transition: opacity .5s; }
+
+  /* 結果 */
+  .big-score { font-size: 64px; font-weight: 900; color: var(--beer); line-height: 1; font-variant-numeric: tabular-nums; }
+  .newbest { display: inline-block; background: var(--lantern); color: #fff; border-radius: 999px; padding: 2px 12px; font-weight: 900; margin-top: 6px; animation: pulse 1s infinite; }
+  .confetti { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 10; }
+  .confetti i { position: absolute; top: -20px; left: var(--x); width: 9px; height: 14px; background: var(--c); border-radius: 2px; animation: fall var(--d) linear var(--delay) forwards; }
+  @keyframes fall { to { transform: translate(var(--drift), 110vh) rotate(var(--r)); } }
+  .err { color: #FFB4A0; font-weight: 700; margin-top: 10px; }
+  body.playing .lanterns { display: none; }
+  @media (prefers-reduced-motion: reduce) { .lanterns span, .start-pulse, .newbest, .hud .time.hurry { animation: none; } }
+</style>
+</head>
+<body>
+<div class="lanterns" aria-hidden="true"><span></span><span></span><span></span></div>
+
+<section class="screen on" id="loading"><div class="hero-nomy" id="loadNomy"></div><p>読み込み中…</p></section>
+
+<section class="screen" id="need">
+  <div class="hero-nomy" id="needNomy"></div>
+  <p class="title">先にアンケートに<br>答えてね！<small>答えた人だけが遊べるゲームです</small></p>
+  <a class="btn" id="toSurvey" href="./" style="text-decoration:none">アンケートに答える</a>
+</section>
+
+<section class="screen" id="start">
+  <div class="hero-nomy" id="startNomy"></div>
+  <h1 class="title">ノミィの泡キャッチ<small id="evName"></small></h1>
+  <div class="countdown" id="countdown"></div>
+  <div class="card">
+    <div class="me"><span id="meName">あなたのベスト</span><span><span class="best" id="meBest">0</span> 点</span></div>
+    <p class="empty" id="meRank" style="margin-top:2px"></p>
+  </div>
+  <div class="card"><h2>🏆 ランキング（参加者）</h2><ol class="rank" id="rankList"></ol></div>
+  <p class="rules">ジョッキを左右に動かしてキャッチ！🫧+1　🫛+3　🍗+5　🌶️−5<br>30秒でどこまでいける？ 当日、1位の人には乾杯の音頭をお願いするかも🍻</p>
+  <button class="btn start-pulse" id="startBtn" type="button">スタート！</button>
+</section>
+
+<section class="screen" id="play">
+  <div class="hud"><span class="score" id="score" aria-live="off">0</span><span class="time" id="time">30</span></div>
+  <div class="timebar"><i id="timebar"></i></div>
+  <canvas id="cv" aria-label="ゲーム画面"></canvas>
+  <div class="player" id="player"></div>
+  <div class="hint" id="hint">画面をなぞってジョッキを動かしてね</div>
+  <div class="ready" id="ready"></div>
+</section>
+
+<section class="screen" id="result">
+  <div class="hero-nomy" id="resNomy"></div>
+  <p style="margin:0;font-weight:700;color:var(--sub)">今回のスコア</p>
+  <div class="big-score" id="resScore">0</div>
+  <div id="resNew"></div>
+  <div class="card"><div class="me"><span>あなたのベスト</span><span><span class="best" id="resBest">0</span> 点</span></div><p class="empty" id="resRank" style="margin-top:2px"></p></div>
+  <div class="card"><h2>🏆 ランキング</h2><ol class="rank" id="resRankList"></ol></div>
+  <p class="err" id="resErr"></p>
+  <button class="btn" id="againBtn" type="button">もう一回！</button>
+  <a class="btn ghost" href="event.html" style="text-decoration:none">イベントの詳細を見る</a>
+</section>
+
+<section class="screen" id="closed">
+  <div class="hero-nomy" id="closedNomy"></div>
+  <h1 class="title">ゲームは終了！<small>たくさん遊んでくれてありがとう🍻</small></h1>
+  <div class="card"><h2>🏆 最終ランキング</h2><ol class="rank" id="closedRank"></ol></div>
+  <a class="btn ghost" href="event.html" style="text-decoration:none">イベントの詳細を見る</a>
+</section>
+
+<div class="confetti" id="confetti" aria-hidden="true"></div>
+
+<script>
+const LIFF_ID = '2012697224-lfwPcqYm';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycby45UwD6Ymwvnf_D_4vMbUGY_m0DUGJtse1oD3hqwHVuDASQ996Xnu2-AKLAqKheMiytQ/exec';
+const params = new URLSearchParams(location.search);
+const PREVIEW = params.has('preview');
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = (id) => document.getElementById(id);
+const el = (tag, props, kids) => { const e = Object.assign(document.createElement(tag), props || {}); (kids || []).forEach((k) => e.append(k)); return e; };
+
+Nomy.installCSS();
+const nomyIn = (id, face, opts) => { $(id).innerHTML = Nomy.svg(Object.assign({ id: id + 'svg', face }, opts || {})); return $(id).querySelector('svg'); };
+nomyIn('loadNomy', 'normal');
+
+let state = null;
+
+function show(id) {
+  document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('on', s.id === id));
+}
+
+// ---------- サーバーとのやりとり ----------
+let previewBest = 0;
+async function api(body) {
+  if (PREVIEW) {
+    await new Promise((r) => setTimeout(r, 400));
+    if (params.has('need')) return { ok: false, error: 'not_answered' };
+    if (body.type === 'score') previewBest = Math.max(previewBest, body.score);
+    const ranking = [{ nickname: 'でぃー', best: 88 }, { nickname: 'ありす', best: Math.max(previewBest, 41) }, { nickname: 'ぼぶ', best: 23 }].sort((a, b) => b.best - a.best);
+    return { ok: true, open: !params.has('closed'), eventDate: params.get('date') || '2026-12-20', eventName: '年末だよ！みんなで忘年会',
+      me: { nickname: 'ありす', best: Math.max(previewBest, 41), rank: ranking.findIndex((r) => r.nickname === 'ありす') + 1 }, ranking };
+  }
+  const res = await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ ...body, idToken: liff.getIDToken() }) });
+  return res.json();
+}
+
+function daysLeft(dateStr) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr || '')) return null;
+  const now = new Date(Date.now() + 9 * 3600 * 1000); // 日本時間の今日
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return Math.round((Date.UTC(y, m - 1, d) - today) / 86400000);
+}
+
+function renderRank(ol, ranking, myName) {
+  ol.replaceChildren(...(ranking.length ? ranking.map((r, i) => el('li', { className: r.nickname === myName ? 'mine' : '' }, [
+    el('span', { className: 'no' }, [el('span', { textContent: i + 1 })]),
+    el('span', { textContent: r.nickname }),
+    el('span', { className: 'sc', textContent: r.best + '点' }),
+  ])) : [el('p', { className: 'empty', textContent: 'まだ誰も遊んでいません。1番乗りしよう！' })]));
+}
+
+function renderStart() {
+  $('evName').textContent = state.eventName || '';
+  const left = daysLeft(state.eventDate);
+  $('countdown').replaceChildren(...(left == null ? ['🗓️ 日程は近日発表！']
+    : left > 0 ? ['🍻 開催まで あと', el('b', { textContent: left }), '日'] : ['🎉 今日が開催日！']));
+  $('meName').textContent = state.me.nickname + ' さんのベスト';
+  $('meBest').textContent = state.me.best;
+  $('meRank').textContent = state.me.rank ? '現在 ' + state.me.rank + '位' : 'まだ記録がありません';
+  renderRank($('rankList'), state.ranking, state.me.nickname);
+  nomyIn('startNomy', 'happy');
+}
+
+// ---------- ゲーム本体 ----------
+const ITEMS = [
+  { em: '🫧', pts: 1, w: 50 },
+  { em: '🫛', pts: 3, w: 25 },
+  { em: '🍗', pts: 5, w: 12 },
+  { em: '🌶️', pts: -5, w: 13 },
+];
+const TOTAL = 30;
+const cv = $('cv');
+const ctx = cv.getContext('2d');
+let W = 0, H = 0, dpr = 1;
+let items = [], pops = [], score = 0, t0 = 0, last = 0, nextSpawn = 0, playerX = 0, running = false, raf = 0;
+let playerSvg = null;
+
+function resize() {
+  dpr = Math.min(2, window.devicePixelRatio || 1);
+  W = cv.clientWidth; H = cv.clientHeight;
+  cv.width = W * dpr; cv.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+addEventListener('resize', resize);
+
+function setPlayer(x) {
+  playerX = Math.max(43, Math.min(W - 43, x));
+  $('player').style.transform = `translateX(${playerX - 43}px)`;
+}
+
+function pick() {
+  let r = Math.random() * 100;
+  for (const it of ITEMS) { if ((r -= it.w) < 0) return it; }
+  return ITEMS[0];
+}
+
+function face(f, move) {
+  Nomy.setFace(playerSvg, f);
+  if (move) Nomy.play(playerSvg, move);
+  clearTimeout(face.t);
+  face.t = setTimeout(() => Nomy.setFace(playerSvg, 'normal'), 500);
+}
+
+function loop(now) {
+  const dt = Math.min(0.05, (now - last) / 1000);
+  last = now;
+  const elapsed = (now - t0) / 1000;
+  const left = Math.max(0, TOTAL - elapsed);
+  const p = elapsed / TOTAL; // 0→1 でだんだん速く
+  $('time').textContent = Math.ceil(left);
+  $('time').classList.toggle('hurry', left <= 5);
+  $('timebar').style.transform = `scaleX(${left / TOTAL})`;
+
+  if (now >= nextSpawn) {
+    const it = pick();
+    items.push({ ...it, x: 24 + Math.random() * (W - 48), y: -30, vy: 170 + p * 260 + Math.random() * 60, rot: Math.random() * 6 });
+    nextSpawn = now + (650 - p * 380) * (0.7 + Math.random() * 0.6);
+  }
+
+  const catchY = H - 100;
+  ctx.clearRect(0, 0, W, H);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = '34px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+  items = items.filter((it) => {
+    it.y += it.vy * dt;
+    if (it.y > catchY - 10 && it.y < catchY + 40 && Math.abs(it.x - playerX) < 48) {
+      score = Math.max(0, score + it.pts);
+      pops.push({ x: it.x, y: catchY - 30, txt: (it.pts > 0 ? '+' : '') + it.pts, good: it.pts > 0, life: 1 });
+      $('score').textContent = score;
+      face(it.pts > 0 ? (it.pts >= 5 ? 'wow' : 'happy') : 'sad', it.pts > 0 ? (it.pts >= 3 ? 'jump' : null) : 'droop');
+      if (navigator.vibrate && it.pts < 0) navigator.vibrate(60);
+      return false;
+    }
+    if (it.y > H + 40) return false;
+    ctx.save();
+    ctx.translate(it.x, it.y);
+    if (!REDUCED) ctx.rotate(Math.sin(now / 300 + it.rot) * 0.25);
+    ctx.fillText(it.em, 0, 0);
+    ctx.restore();
+    return true;
+  });
+  ctx.font = '900 24px "Zen Maru Gothic", sans-serif';
+  pops = pops.filter((pp) => {
+    pp.life -= dt * 1.4; pp.y -= 60 * dt;
+    ctx.globalAlpha = Math.max(0, pp.life);
+    ctx.fillStyle = pp.good ? '#F6B93B' : '#FF7A5C';
+    ctx.fillText(pp.txt, pp.x, pp.y);
+    ctx.globalAlpha = 1;
+    return pp.life > 0;
+  });
+
+  if (left <= 0) return finish();
+  raf = requestAnimationFrame(loop);
+}
+
+function move(e) {
+  if (!running) return;
+  const x = e.touches ? e.touches[0].clientX : e.clientX;
+  setPlayer(x);
+  $('hint').style.opacity = 0;
+}
+cv.addEventListener('pointermove', move);
+cv.addEventListener('pointerdown', move);
+cv.addEventListener('touchmove', (e) => { e.preventDefault(); move(e); }, { passive: false });
+addEventListener('keydown', (e) => {
+  if (!running) return;
+  if (e.key === 'ArrowLeft') setPlayer(playerX - 40);
+  if (e.key === 'ArrowRight') setPlayer(playerX + 40);
+});
+
+async function countdownReady() {
+  const r = $('ready');
+  for (const s of ['3', '2', '1', 'カンパイ！']) {
+    r.textContent = s; r.classList.remove('go'); void r.offsetWidth; r.classList.add('go');
+    await new Promise((res) => setTimeout(res, REDUCED ? 300 : 650));
+  }
+  r.textContent = '';
+}
+
+async function startGame() {
+  document.body.classList.add('playing');
+  show('play');
+  resize();
+  $('player').innerHTML = Nomy.svg({ id: 'pl', face: 'happy' });
+  playerSvg = $('player').querySelector('svg');
+  setPlayer(W / 2);
+  items = []; pops = []; score = 0;
+  $('score').textContent = '0'; $('time').textContent = TOTAL; $('timebar').style.transform = 'scaleX(1)';
+  $('hint').style.opacity = 1;
+  ctx.clearRect(0, 0, W, H);
+  await countdownReady();
+  running = true;
+  t0 = last = performance.now();
+  nextSpawn = t0 + 200;
+  raf = requestAnimationFrame(loop);
+}
+
+async function finish() {
+  running = false;
+  document.body.classList.remove('playing');
+  cancelAnimationFrame(raf);
+  const before = state.me.best;
+  $('resScore').textContent = score;
+  $('resErr').textContent = '';
+  $('resNew').replaceChildren();
+  show('result');
+  const resN = nomyIn('resNomy', score > before ? 'sparkle' : 'happy');
+  Nomy.play(resN, 'jump');
+  try {
+    const res = await api({ type: 'score', score });
+    if (res.ok) state = res;
+    else if (res.error === 'closed') { state.open = false; $('resErr').textContent = 'ゲームの期間が終わったので、今回の記録は残りませんでした。'; }
+    else $('resErr').textContent = '記録を保存できませんでした。もう一度遊ぶと保存されます。';
+  } catch (e) {
+    $('resErr').textContent = '通信に失敗しました。電波のいいところでもう一度遊んでね。';
+  }
+  $('resBest').textContent = state.me.best;
+  $('resRank').textContent = state.me.rank ? '現在 ' + state.me.rank + '位' : '';
+  renderRank($('resRankList'), state.ranking, state.me.nickname);
+  if (score > before && score > 0) {
+    $('resNew').append(el('span', { className: 'newbest', textContent: '自己ベスト更新！' }));
+    confetti();
+  }
+  $('againBtn').hidden = !state.open;
+}
+
+function confetti() {
+  if (REDUCED) return;
+  const box = $('confetti');
+  box.replaceChildren();
+  const colors = ['#F6B93B', '#E4572E', '#fff', '#7CC4F2'];
+  for (let i = 0; i < 50; i++) {
+    box.append(el('i', { style: `--x:${Math.random() * 100}%;--c:${colors[i % 4]};--d:${2 + Math.random() * 2}s;--delay:${Math.random() * .5}s;--drift:${(Math.random() - .5) * 120}px;--r:${(Math.random() - .5) * 900}deg` }));
+  }
+}
+
+$('startBtn').addEventListener('click', startGame);
+$('againBtn').addEventListener('click', () => { renderStart(); startGame(); });
+
+// ---------- はじめる ----------
+async function main() {
+  if (!PREVIEW) {
+    try { await liff.init({ liffId: LIFF_ID }); } catch (e) { $('loading').querySelector('p').textContent = 'LINEアプリから開いてね。'; return; }
+    if (!liff.isLoggedIn()) { liff.login({ redirectUri: location.href }); return; }
+    $('toSurvey').href = 'https://liff.line.me/' + LIFF_ID;
+  }
+  let res;
+  try { res = await api({ type: 'game' }); } catch (e) { $('loading').querySelector('p').textContent = '読み込めませんでした。開き直してね。'; return; }
+  if (!res.ok) {
+    if (res.error === 'not_answered') { nomyIn('needNomy', 'wink'); show('need'); return; }
+    if (res.error === 'auth' && !PREVIEW) { liff.logout(); liff.login({ redirectUri: location.href }); return; }
+    $('loading').querySelector('p').textContent = '読み込めませんでした。開き直してね。';
+    return;
+  }
+  state = res;
+  if (!state.open) {
+    nomyIn('closedNomy', 'happy');
+    renderRank($('closedRank'), state.ranking, state.me.nickname);
+    show('closed');
+    return;
+  }
+  renderStart();
+  show('start');
+}
+main();
+</script>
+</body>
+</html>
