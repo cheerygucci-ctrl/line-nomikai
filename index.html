@@ -213,6 +213,23 @@
       <div class="nav"><button type="button" class="btn ghost" data-back>もどる</button><button type="button" class="btn" data-next>つぎへ</button></div>
     </section>
 
+    <section class="step" data-step="job" data-say="どんなお仕事をしてるの？">
+      <p class="q" id="jobQ">職業は？<span class="tag req">必須</span></p>
+      <div class="choices" role="radiogroup" aria-labelledby="jobQ">
+        <input type="radio" id="j1" name="job" value="会社員"><label for="j1"><span class="em">🏢</span>会社員</label>
+        <input type="radio" id="j2" name="job" value="経営者・役員"><label for="j2"><span class="em">👔</span>経営者・役員</label>
+        <input type="radio" id="j3" name="job" value="個人事業主・フリーランス"><label for="j3"><span class="em">💻</span>個人事業主・フリーランス</label>
+        <input type="radio" id="j4" name="job" value="公務員"><label for="j4"><span class="em">🏛️</span>公務員</label>
+        <input type="radio" id="j5" name="job" value="学生"><label for="j5"><span class="em">🎓</span>学生</label>
+        <input type="radio" id="j6" name="job" value="パート・アルバイト"><label for="j6"><span class="em">🧑‍🍳</span>パート・アルバイト</label>
+        <input type="radio" id="j7" name="job" value="その他"><label for="j7"><span class="em">💭</span>その他</label>
+      </div>
+      <label class="hint" for="jobDetail">業種・職種（任意）</label>
+      <input type="text" id="jobDetail" name="jobDetail" maxlength="60" placeholder="例：IT・Webエンジニア、美容・ネイリスト" enterkeyhint="next">
+      <p class="err" data-err></p>
+      <div class="nav"><button type="button" class="btn ghost" data-back>もどる</button><button type="button" class="btn" data-next>つぎへ</button></div>
+    </section>
+
     <section class="step" data-step="referral" data-say="この会のこと、どこで知ったの？">
       <p class="q" id="refQ">この会を知ったきっかけは？<span class="tag req">必須</span></p>
       <div class="choices" role="radiogroup" aria-labelledby="refQ">
@@ -329,7 +346,7 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycby45UwD6Ymwvnf_D_4vMbUG
 // ?preview=1 で LINE につながずに見た目だけ確認できる（送信もしない）
 const params = new URLSearchParams(location.search);
 const PREVIEW = params.has('preview');
-const FIELDS = ['nickname', 'attend', 'drink', 'ng', 'dream', 'goal', 'comment', 'referral', 'referrer', 'adult', 'connect'];
+const FIELDS = ['nickname', 'attend', 'drink', 'ng', 'dream', 'goal', 'comment', 'referral', 'referrer', 'adult', 'connect', 'job', 'jobDetail'];
 const SAMPLE_EVENT = {
   greeting: 'この会は、お酒を飲みながら「将来の夢」や「これからの働き方」を気軽に語り合う交流会です。\nまずはかんたんなアンケートに答えてね！',
   rules: '・セクハラ、パワハラ、しつこい勧誘・営業は禁止です\n・守れない場合は途中で退場していただき、次回以降も参加できません\n・お酒の席なので、20歳未満の方は参加できません',
@@ -400,6 +417,7 @@ function check(s) {
   if (k === 'adult' && !form.elements.adult.value) msg = 'どちらか選んでね';
   if (k === 'adult' && form.elements.adult.value === 'いいえ') { msg = ' '; }
   if (k === 'referral' && !form.elements.referral.value) msg = 'ひとつ選んでね';
+  if (k === 'job' && !form.elements.job.value) msg = 'ひとつ選んでね';
   if (k === 'purpose' && !purposes().length) msg = 'ひとつ以上選んでね';
   if (k === 'agree' && !$('agree').checked) msg = 'ルールに同意してね';
   if (msg === ' ') { say('ごめんね…お酒の席だから20歳以上の人だけなんだ', 'sad', 'droop'); return false; }
@@ -421,6 +439,7 @@ form.addEventListener('click', (e) => {
 function purposes() { return [...form.querySelectorAll('input[name=purpose]:checked')].map((c) => c.value); }
 
 const REACT = {
+  job: { '会社員': ['毎日おつかれさま！', 'happy', 'wiggle'], '経営者・役員': ['社長さんだ…！', 'wow', 'jump'], '個人事業主・フリーランス': ['自分の力で働いてるのかっこいい！', 'sparkle', 'jump'], '公務員': ['いつもありがとう！', 'happy', 'wiggle'], '学生': ['学生さんいらっしゃい！', 'happy', 'jump'], 'パート・アルバイト': ['いいね、おつかれさま！', 'happy', 'wiggle'], 'その他': ['いろんな人がいて楽しいね！', 'wink', 'wiggle'] },
   adult: { 'はい': ['ありがとう！', 'happy', 'wiggle'], 'いいえ': ['ごめんね…お酒の席だから20歳以上の人だけなんだ', 'sad', 'droop'] },
   referral: { '知り合いの紹介': ['いい人に誘われたね！よかったら名前も教えて', 'happy', 'jump'], 'SNS': ['見つけてくれてありがとう！', 'wink', 'wiggle'], 'その他': ['なるほど〜！', 'normal', 'wiggle'] },
   attend: { '参加': ['やったー！待ってるね！', 'happy', 'jump'], '不参加': ['そっかぁ…また今度ね！', 'sad', 'droop'] },
@@ -491,7 +510,7 @@ function banner(msg) {
 async function api(body) {
   if (PREVIEW) {
     await new Promise((r) => setTimeout(r, 500));
-    return body.type === 'load' ? { ok: true, answer: params.has('again') ? { nickname: 'ありす', attend: '参加', drink: '少し', ng: '', dream: '', goal: '', comment: '', adult: 'はい', referral: '知り合いの紹介', referrer: 'たろう', purpose: ['交流したい'], agree: true, connect: '' } : null } : { ok: true };
+    return body.type === 'load' ? { ok: true, answer: params.has('again') ? { nickname: 'ありす', attend: '参加', drink: '少し', ng: '', dream: '', goal: '', comment: '', adult: 'はい', referral: '知り合いの紹介', referrer: 'たろう', purpose: ['交流したい'], agree: true, connect: '', job: '会社員', jobDetail: '' } : null } : { ok: true };
   }
   const res = await fetch(GAS_URL, {
     method: 'POST',
@@ -506,7 +525,7 @@ form.addEventListener('submit', async (e) => {
   banner('');
   const v = getValues();
   if (!v.nickname) { go(visibleSteps().findIndex((s) => s.dataset.step === 'nickname'), -1); return check(current()); }
-  for (const k of ['adult', 'referral', 'attend', 'purpose', 'agree']) {
+  for (const k of ['adult', 'job', 'referral', 'attend', 'purpose', 'agree']) {
     const i = visibleSteps().findIndex((s) => s.dataset.step === k);
     if (!check(visibleSteps()[i])) { go(i, -1); return check(current()); }
   }

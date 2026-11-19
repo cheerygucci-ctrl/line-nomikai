@@ -236,7 +236,7 @@
       tile(going.length, '参加', '🙋', 'main'),
       tile(A.filter((a) => a.attend === '不参加').length, '不参加', '🙇'),
       tile(A.length, '回答数', '📝'),
-      tile(job.length, '仕事の話を聞きたい', '💼'),
+      tile(job.length, '仕事の話を聞きたい', '🤝'),
       el('div', { className: 'tile small' }, [el('span', { className: 'em', 'aria-hidden': 'true', textContent: '🕒' }), el('div', { className: 'n', textContent: last || '—' }), el('div', { className: 'l', textContent: '最新の回答' })]),
     ].map(stagger));
 
@@ -249,6 +249,7 @@
       panel('🍺 お酒（参加する人）', emptyOr(going.length, bars(['飲む', '少し', '飲まない', ''], (k) => going.filter((a) => a.drink === k).length), 'まだ参加の回答がありません。')),
       panel('⚠️ 食べられないもの・アレルギー', emptyOr(ng.length, el('ul', { className: 'chips red' }, ng.map((a, i) => stagger(el('li', {}, [el('b', { textContent: a.nickname }), '：' + a.ng]), i))), '今のところ申告はありません。')),
       panel('🎯 参加の目的（複数回答）', emptyOr(A.length, bars(['交流したい', '仕事の話を聞きたい', '夢・目標を話したい', 'その他'], (k) => A.filter((a) => (a.purpose || '').split('、').includes(k)).length), 'まだ回答がありません。')),
+      panel('💼 職業', emptyOr(A.length, bars(['会社員', '経営者・役員', '個人事業主・フリーランス', '公務員', '学生', 'パート・アルバイト', 'その他', ''], (k) => A.filter((a) => (a.job || '') === k).length), 'まだ回答がありません。')),
       panel('📣 知ったきっかけ', emptyOr(A.length, bars(['知り合いの紹介', 'SNS', 'その他', ''], (k) => A.filter((a) => (a.referral || '') === k).length), 'まだ回答がありません。')),
     ].map(stagger));
 
@@ -267,7 +268,7 @@
   }
 
   const DETAIL = [
-    ['LINE名', 'lineName'], ['回答日時', 'at'], ['知ったきっかけ', (a) => (a.referral || '') + (a.referrer ? '（' + a.referrer + '）' : '')],
+    ['職業', (a) => (a.job || '') + (a.jobDetail ? '（' + a.jobDetail + '）' : '')], ['LINE名', 'lineName'], ['回答日時', 'at'], ['知ったきっかけ', (a) => (a.referral || '') + (a.referrer ? '（' + a.referrer + '）' : '')],
     ['参加の目的', 'purpose'], ['仕事でつながりたい人', 'connect'], ['お酒', 'drink'], ['NG・アレルギー', 'ng'],
     ['夢・やりたいこと', 'dream'], ['目標', 'goal'], ['ひとこと', 'comment'],
   ];
@@ -283,11 +284,12 @@
     const draw = () => {
       const list = filtered(search.value);
       const table = el('div', { className: 'tablewrap' }, [el('table', {}, [
-        el('thead', {}, [el('tr', {}, ['回答日時', 'ニックネーム', 'LINE名', '参加', '知ったきっかけ', '参加の目的', '仕事でつながりたい人', 'お酒', 'NG・アレルギー', '夢・やりたいこと', '目標', 'ひとこと'].map((h) => el('th', { textContent: h })))]),
+        el('thead', {}, [el('tr', {}, ['回答日時', 'ニックネーム', 'LINE名', '参加', '職業', '知ったきっかけ', '参加の目的', '仕事でつながりたい人', 'お酒', 'NG・アレルギー', '夢・やりたいこと', '目標', 'ひとこと'].map((h) => el('th', { textContent: h })))]),
         el('tbody', {}, list.map((a, i) => stagger(el('tr', {}, [
           el('td', { textContent: a.at }), el('td', { textContent: a.nickname }), el('td', { textContent: a.lineName }),
           el('td', {}, [el('span', { className: 'pill ' + (a.attend === '参加' ? 'yes' : 'no'), textContent: a.attend })]),
-          el('td', { textContent: val(a, DETAIL[2][1]) || '—' }), el('td', { className: 'long', textContent: a.purpose }),
+          el('td', { className: 'long', textContent: val(a, DETAIL[0][1]) || '—' }),
+          el('td', { textContent: val(a, DETAIL[3][1]) || '—' }), el('td', { className: 'long', textContent: a.purpose }),
           el('td', { className: 'long', textContent: a.connect }), el('td', { textContent: a.drink || '—' }),
           el('td', { className: 'long', textContent: a.ng }), el('td', { className: 'long', textContent: a.dream }),
           el('td', { className: 'long', textContent: a.goal }), el('td', { className: 'long', textContent: a.comment }),
@@ -298,7 +300,7 @@
         const head = el('button', { type: 'button', 'aria-expanded': 'false' }, [
           el('span', { className: 'who', textContent: a.nickname }),
           el('span', {}, [el('span', { className: 'pill ' + (a.attend === '参加' ? 'yes' : 'no'), textContent: a.attend }), el('span', { className: 'chev', 'aria-hidden': 'true', textContent: ' ▾' })]),
-          el('span', { className: 'meta', textContent: [a.purpose, a.connect ? '🤝 ' + a.connect : ''].filter(Boolean).join('　') || a.at }),
+          el('span', { className: 'meta', textContent: [a.job ? '💼 ' + a.job : '', a.purpose, a.connect ? '🤝 ' + a.connect : ''].filter(Boolean).join('　') || a.at }),
         ]);
         head.addEventListener('click', () => { const open = card.classList.toggle('open'); head.setAttribute('aria-expanded', String(open)); });
         const dl = el('dl', {}, DETAIL.flatMap(([label, f]) => [el('dt', { textContent: label }), el('dd', { textContent: val(a, f) || '—' })]));
@@ -326,7 +328,7 @@
             if (a.dream) dl.append(el('dt', { textContent: '🌟 夢・やりたいこと' }), el('dd', { textContent: a.dream }));
             if (a.goal) dl.append(el('dt', { textContent: '🎯 目標' }), el('dd', { textContent: a.goal }));
             if (a.connect) dl.append(el('dt', { textContent: '🤝 仕事でつながりたい人' }), el('dd', { textContent: a.connect }));
-            return stagger(el('div', { className: 'dream' }, [el('div', { className: 'who', textContent: a.nickname + (a.attend === '参加' ? '' : '（不参加）') }), dl]), i);
+            return stagger(el('div', { className: 'dream' }, [el('div', { className: 'who', textContent: a.nickname + (a.attend === '参加' ? '' : '（不参加）') }), a.job ? el('div', { className: 'note', style: 'margin:-4px 0 6px', textContent: '💼 ' + val(a, DETAIL[0][1]) }) : null, dl]), i);
           }))
         : el('p', { className: 'empty', textContent: 'まだ書いてくれた人はいません。' }));
   }
