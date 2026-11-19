@@ -246,6 +246,16 @@ form.ev .count { font-size: 12px; color: var(--sub); text-align: right; }
 @keyframes burst { 0% { transform: translate(0,0) rotate(0); opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)) rotate(var(--r)); opacity: 0; } }
 
 /* ---------- スマホ ---------- */
+/* 友だち */
+.friends { display: grid; gap: 8px; }
+.friend { display: grid; grid-template-columns: 44px 1fr auto; gap: 12px; align-items: center; background: var(--panel); border-radius: 16px; padding: 10px 14px; }
+.friend.off { opacity: .55; }
+.friend .av { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background: var(--gold-soft); color: #9A6A00; display: grid; place-items: center; font-weight: 900; font-size: 18px; }
+.friend .fx { min-width: 0; }
+.friend .who { font-weight: 900; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.friend .meta { font-size: 12px; color: var(--sub); }
+.toggle { flex-wrap: wrap; }
+
 @media (max-width: 720px) {
   .top { padding: 8px 12px; }
   .top h1 { font-size: 16px; }

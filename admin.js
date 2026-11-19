@@ -10,6 +10,7 @@
   const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const TABS = [
     { key: 'summary', label: '概要', em: '📊' },
+    { key: 'friends', label: '友だち', em: '👋' },
     { key: 'list', label: '回答', em: '📝' },
     { key: 'dreams', label: '夢', em: '✨' },
     { key: 'notice', label: 'お知らせ', em: '📣' },
@@ -20,6 +21,8 @@
   let data = null;
   let current = 'summary';
   let onlyAttend = false;
+  let friendFilter = 'all';
+  let friendSync = null; // 本体GASの syncFriends の結果
 
   // ---------- 小さな道具 ----------
   function el(tag, props, kids) {
@@ -171,6 +174,7 @@
     const ev = data.event;
     $('evName').textContent = ev.name + '｜' + ev.date;
     renderSummary();
+    renderFriends();
     renderList();
     renderDreams();
     renderEvent();
@@ -471,6 +475,7 @@
       tile(going.length, '参加', '🙋', 'main'),
       tile(A.filter((a) => a.attend === '不参加').length, '不参加', '🙇'),
       tile(A.length, '回答数', '📝'),
+      tile((data.friends || []).filter((f) => f.status !== 'ブロック').length, '友だち', '👋'),
       tile(job.length, '仕事の話を聞きたい', '🤝'),
       el('div', { className: 'tile small' }, [el('span', { className: 'em', 'aria-hidden': 'true', textContent: '🕒' }), el('div', { className: 'n', textContent: last || '—' }), el('div', { className: 'l', textContent: '最新の回答' })]),
     ].map(stagger));
@@ -554,6 +559,87 @@
     }));
     view.replaceChildren(el('div', { className: 'toolbar' }, [el('div', { className: 'search' }, [search]), el('div', { className: 'toggle', role: 'group', 'aria-label': '表示する人' }, [all, yes])]), body, count);
     draw();
+  }
+
+  // ---------- 友だち ----------
+  const FRIEND_FILTERS = [
+    { key: 'all', label: '全員' },
+    { key: 'todo', label: '未回答' },
+    { key: 'done', label: '回答済み' },
+    { key: 'blocked', label: 'ブロック' },
+  ];
+
+  function syncFriendsOnce() {
+    if (friendSync) return;
+    friendSync = { pending: true };
+    fetch(MAIN, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ type: 'syncFriends' }) })
+      .then((r) => r.json()).catch(() => ({ ok: false }))
+      .then((res) => {
+        friendSync = res || { ok: false };
+        if (res && res.added > 0) { toast(`友だちを ${res.added} 人取り込みました`); load(false); } else if (data) renderFriends();
+      });
+  }
+
+  function avatar(f) {
+    if (f.icon) {
+      const img = el('img', { className: 'av', src: f.icon + '/small', alt: '', loading: 'lazy', referrerPolicy: 'no-referrer' });
+      img.addEventListener('error', () => img.replaceWith(el('span', { className: 'av', 'aria-hidden': 'true', textContent: (f.name || '?').slice(0, 1) })), { once: true });
+      return img;
+    }
+    return el('span', { className: 'av', 'aria-hidden': 'true', textContent: (f.name || '?').slice(0, 1) });
+  }
+
+  function renderFriends() {
+    const F = data.friends || [];
+    const active = F.filter((f) => f.status !== 'ブロック');
+    const tile = (n, label, em, cls) => { const num = el('div', { className: 'n', textContent: '0' }); countUp(num, n); return el('div', { className: 'tile ' + (cls || '') }, [el('span', { className: 'em', 'aria-hidden': 'true', textContent: em }), num, el('div', { className: 'l', textContent: label })]); };
+    const tiles = el('div', { className: 'tiles', style: 'margin-bottom:14px' }, [
+      tile(active.length, '友だち', '👋', 'main'),
+      tile(active.filter((f) => f.answered).length, '回答済み', '📝'),
+      tile(active.filter((f) => !f.answered).length, '未回答', '⏳'),
+      tile(F.length - active.length, 'ブロック', '🚫'),
+    ].map(stagger));
+
+    const search = el('input', { type: 'search', placeholder: 'LINE名・ニックネームで検索', 'aria-label': '友だちを検索' });
+    const btns = FRIEND_FILTERS.map((x) => el('button', { type: 'button', textContent: x.label, 'aria-pressed': String(friendFilter === x.key) }));
+    const body = el('div', { className: 'friends' });
+    const count = el('p', { className: 'note', style: 'margin-top:10px' });
+    const draw = () => {
+      const q = search.value.trim().toLowerCase();
+      const list = F.filter((f) => {
+        if (friendFilter === 'todo' && (f.answered || f.status === 'ブロック')) return false;
+        if (friendFilter === 'done' && !f.answered) return false;
+        if (friendFilter === 'blocked' && f.status !== 'ブロック') return false;
+        return !q || ((f.name || '') + ' ' + (f.nickname || '')).toLowerCase().includes(q);
+      });
+      body.replaceChildren(...(list.length ? list.map((f, i) => {
+        const badge = f.status === 'ブロック'
+          ? el('span', { className: 'pill no', textContent: 'ブロック' })
+          : f.answered ? el('span', { className: 'pill yes', textContent: '回答済み' }) : el('span', { className: 'pill wait', textContent: '未回答' });
+        const sub = [f.nickname ? '「' + f.nickname + '」' : '', f.attend ? (f.attend === '参加' ? '🙋 参加' : '🙇 不参加') : '', f.addedAt ? '追加 ' + f.addedAt.slice(0, 16) : ''].filter(Boolean).join('　');
+        return stagger(el('div', { className: 'friend' + (f.status === 'ブロック' ? ' off' : '') }, [
+          avatar(f),
+          el('div', { className: 'fx' }, [el('div', { className: 'who', textContent: f.name || '（名前を取得できませんでした）' }), el('div', { className: 'meta', textContent: sub || '—' })]),
+          badge,
+        ]), i);
+      }) : [el('p', { className: 'empty', textContent: '当てはまる人はいません。' })]));
+      count.textContent = list.length + '人を表示中（全' + F.length + '人）';
+    };
+    search.addEventListener('input', draw);
+    btns.forEach((b, i) => b.addEventListener('click', () => {
+      friendFilter = FRIEND_FILTERS[i].key;
+      btns.forEach((x, j) => x.setAttribute('aria-pressed', String(i === j)));
+      draw();
+    }));
+    const notes = [el('p', { className: 'note', textContent: '公式LINEを友だち追加した人の一覧です。未回答の人には、お知らせタブの「友だち全員」でアンケートのお願いを送れます。' })];
+    if (friendSync && friendSync.ok && friendSync.followersApi === false) {
+      notes.push(el('p', { className: 'note', textContent: '※ 2026/11/19 より前に追加して、まだアンケートにもメッセージにも反応していない人は、何か操作してくれた時点でここに出てきます（LINEの仕様で、それ以前の友だちは一覧を取得できないため）。' }));
+    }
+    $('view-friends').replaceChildren(tiles, ...notes,
+      el('div', { className: 'toolbar' }, [el('div', { className: 'search' }, [search]), el('div', { className: 'toggle', role: 'group', 'aria-label': '表示する人' }, btns)]),
+      body, count);
+    draw();
+    syncFriendsOnce();
   }
 
   function renderDreams() {
