@@ -156,7 +156,10 @@ form.ev .count { font-size: 12px; color: var(--sub); text-align: right; }
 .targets label small { color: var(--sub); font-size: 11px; }
 .targets input:checked + label { border-color: var(--gold); background: var(--gold-soft); transform: translateY(-1px); }
 .targets input:focus-visible + label { outline: 2px solid var(--ink); }
-.pick { margin-top: 10px; width: 100%; font: inherit; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: #fff; }
+.pick { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
+.pick[hidden] { display: none; }
+.pick-chip { border: 2px solid var(--line); background: #fff; border-radius: 999px; padding: 6px 14px; font-weight: 700; cursor: pointer; transition: transform .15s, background .2s, border-color .2s; }
+.pick-chip[aria-checked="true"] { background: var(--ink); color: #fff; border-color: var(--ink); transform: scale(1.05); }
 .chips-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
 .chip-btn { border: 1px dashed var(--gold); background: var(--gold-soft); border-radius: 999px; padding: 4px 12px; font-size: 13px; font-weight: 700; cursor: pointer; }
 .chip-btn:active { transform: scale(.96); }

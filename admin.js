@@ -188,8 +188,20 @@
     const counts = { all: null, answered: A.length, attending: A.filter((a) => a.attend === '参加').length, one: 1 };
     const view = $('view-notice');
 
-    const pick = el('select', { 'aria-label': '送る人', className: 'pick' }, [el('option', { value: '', textContent: '送る人を選ぶ' })].concat(
-      A.map((a) => el('option', { value: String(a.row), textContent: a.nickname + (a.attend === '参加' ? '' : '（不参加）') }))));
+    // 送る人（1人だけ）：名前のチップから選ぶ
+    const pick = el('div', { className: 'pick', role: 'radiogroup', 'aria-label': '送る人' });
+    pick.value = '';
+    pick.label = '';
+    A.forEach((a) => {
+      const b = el('button', { type: 'button', className: 'pick-chip', role: 'radio', 'aria-checked': 'false', textContent: a.nickname + (a.attend === '参加' ? '' : '（不参加）') });
+      b.addEventListener('click', () => {
+        pick.querySelectorAll('.pick-chip').forEach((x) => x.setAttribute('aria-checked', 'false'));
+        b.setAttribute('aria-checked', 'true');
+        pick.value = String(a.row); pick.label = a.nickname;
+      });
+      pick.append(b);
+    });
+    if (!A.length) pick.append(el('p', { className: 'empty', textContent: 'まだ回答した人がいません。' }));
     const targets = el('div', { className: 'targets', role: 'radiogroup', 'aria-label': '宛先' }, TARGETS.map((t) => {
       const id = 'tg-' + t.key;
       const input = el('input', { type: 'radio', name: 'target', id, value: t.key, checked: t.key === noticeTarget });
@@ -233,9 +245,9 @@
     send.addEventListener('click', () => {
       const body = text.value.trim();
       if (!body) { toast('本文を入力してください', { err: true }); text.focus(); return; }
-      if (noticeTarget === 'one' && !pick.value) { toast('送る人を選んでください', { err: true }); pick.focus(); return; }
+      if (noticeTarget === 'one' && !pick.value) { toast('送る人を選んでください', { err: true }); return; }
       const t = TARGETS.find((x) => x.key === noticeTarget);
-      const who = noticeTarget === 'one' ? pick.options[pick.selectedIndex].textContent + ' さん' : t.label + (counts[noticeTarget] == null ? '' : '（' + counts[noticeTarget] + '人）');
+      const who = noticeTarget === 'one' ? pick.label + ' さん' : t.label + (counts[noticeTarget] == null ? '' : '（' + counts[noticeTarget] + '人）');
       if (!confirm(who + ' に送ります。\n送ったあとは取り消せません。よろしいですか？')) return;
       send.disabled = true; send.classList.add('flying'); send.textContent = '送信中…';
       run().withSuccessHandler((list) => {
