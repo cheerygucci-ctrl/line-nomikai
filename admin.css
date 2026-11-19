@@ -145,6 +145,43 @@ form.ev .count { font-size: 12px; color: var(--sub); text-align: right; }
 .primary:disabled { opacity: .6; cursor: default; }
 .link { color: var(--ink); font-weight: 700; }
 
+/* お知らせ */
+.notice-grid { display: grid; grid-template-columns: 1fr 320px; gap: 10px; align-items: start; }
+.prevpanel { position: sticky; top: 120px; }
+.targets { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.targets input { position: absolute; opacity: 0; pointer-events: none; }
+.targets label { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 14px; border: 2px solid var(--line); cursor: pointer; transition: border-color .2s, background .2s, transform .15s; height: 100%; }
+.targets label .em { font-size: 22px; }
+.targets label .tl { display: grid; line-height: 1.35; }
+.targets label small { color: var(--sub); font-size: 11px; }
+.targets input:checked + label { border-color: var(--gold); background: var(--gold-soft); transform: translateY(-1px); }
+.targets input:focus-visible + label { outline: 2px solid var(--ink); }
+.pick { margin-top: 10px; width: 100%; font: inherit; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: #fff; }
+.chips-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.chip-btn { border: 1px dashed var(--gold); background: var(--gold-soft); border-radius: 999px; padding: 4px 12px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.chip-btn:active { transform: scale(.96); }
+.count { font-size: 12px; color: var(--sub); text-align: right; }
+.quota { margin: 6px 0 0; }
+.preview { background: #7494C0; border-radius: 22px; overflow: hidden; min-height: 300px; }
+.phone-top { background: #2B3A55; color: #fff; text-align: center; font-weight: 700; padding: 8px; font-size: 13px; }
+.chat { display: flex; gap: 8px; align-items: flex-start; padding: 14px 12px; }
+.chat .avatar { width: 36px; flex: none; background: #fff; border-radius: 50%; padding: 3px; }
+.bubble { background: #fff; border-radius: 4px 16px 16px 16px; padding: 8px 12px; white-space: pre-wrap; word-break: break-word; font-size: 14px; max-width: 240px; }
+.bubble.placeholder { color: var(--sub); }
+.bubble.pop { animation: bub .25s ease; }
+@keyframes bub { from { transform: scale(.97); opacity: .6; } }
+.send.flying::after { content: " ✈️"; display: inline-block; animation: fly 1s ease-in infinite; }
+@keyframes fly { 0% { transform: translate(0,0); opacity: 1; } 100% { transform: translate(30px,-16px); opacity: 0; } }
+.history { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.history li { background: #F7F9FC; border-radius: 12px; padding: 10px 12px; }
+.h-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.h-head small { color: var(--sub); }
+.h-text { margin: 6px 0 0; white-space: pre-wrap; word-break: break-word; font-size: 14px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.h-err { margin: 6px 0 0; color: var(--red); font-size: 13px; }
+.history .ghost-btn { margin-top: 8px; color: var(--ink); }
+.pill.wait { background: var(--gold-soft); color: #9A6A00; }
+.pill.err { background: var(--red-soft); color: var(--red); }
+
 /* メンバー */
 .members { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .members li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; background: #F7F9FC; }
@@ -210,6 +247,10 @@ form.ev .count { font-size: 12px; color: var(--sub); text-align: right; }
   .toast { top: 70px; bottom: auto; transform: translate(-50%, -200%); }
   .toast.show { transform: translate(-50%, 0); }
   .acard dl { grid-template-columns: 1fr; gap: 0; }
+  .notice-grid { grid-template-columns: 1fr; }
+  .prevpanel { position: static; }
+  .targets { grid-template-columns: 1fr; }
+  .tabs button { font-size: 10px; }
   .acard dd { margin-bottom: 8px; }
 }
 

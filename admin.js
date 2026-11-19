@@ -5,11 +5,14 @@
 (function () {
   'use strict';
   const SITE = 'https://cheerygucci-ctrl.github.io/line-nomikai/event.html';
+  // 本体GAS（LINEに送る役）。キューの送信待ちを今すぐ送ってもらうために呼ぶ
+  const MAIN = 'https://script.google.com/macros/s/AKfycby45UwD6Ymwvnf_D_4vMbUGY_m0DUGJtse1oD3hqwHVuDASQ996Xnu2-AKLAqKheMiytQ/exec';
   const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const TABS = [
     { key: 'summary', label: '概要', em: '📊' },
     { key: 'list', label: '回答', em: '📝' },
-    { key: 'dreams', label: '夢・つながり', em: '✨' },
+    { key: 'dreams', label: '夢', em: '✨' },
+    { key: 'notice', label: 'お知らせ', em: '📣' },
     { key: 'event', label: 'イベント', em: '🍻' },
     { key: 'members', label: 'メンバー', em: '👥' },
   ];
@@ -153,8 +156,141 @@
     renderList();
     renderDreams();
     renderEvent();
+    renderNotice();
     loadMembers();
     show(current);
+  }
+
+  // ---------- お知らせ ----------
+  const TARGETS = [
+    { key: 'all', label: '友だち全員', em: '📢', hint: '公式LINEの友だち全員（ブロックしている人を除く）' },
+    { key: 'answered', label: 'アンケートに答えた人', em: '📝' },
+    { key: 'attending', label: '参加する人', em: '🙋' },
+    { key: 'one', label: '1人だけ', em: '👤', hint: 'テスト送信にも使えます（自分の名前を選ぶ）' },
+  ];
+  let noticeTarget = 'attending';
+
+  function eventTemplate() {
+    const ev = data.event;
+    const lines = ['📣 ' + ev.name + ' のお知らせ', '', '📅 日時：' + ev.date, '📍 場所：' + ev.place + (ev.address ? '（' + ev.address + '）' : ''), '💰 会費：' + ev.fee];
+    if (ev.deadline) lines.push('⏰ 回答の締切：' + ev.deadline);
+    lines.push('', '詳しくはこちら👇', SITE);
+    return lines.join('\n');
+  }
+
+  function flush() {
+    return fetch(MAIN, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ type: 'flush' }) })
+      .then((r) => r.json()).catch(() => ({ ok: false }));
+  }
+
+  function renderNotice() {
+    const A = data.answers;
+    const counts = { all: null, answered: A.length, attending: A.filter((a) => a.attend === '参加').length, one: 1 };
+    const view = $('view-notice');
+
+    const pick = el('select', { 'aria-label': '送る人', className: 'pick' }, [el('option', { value: '', textContent: '送る人を選ぶ' })].concat(
+      A.map((a) => el('option', { value: String(a.row), textContent: a.nickname + (a.attend === '参加' ? '' : '（不参加）') }))));
+    const targets = el('div', { className: 'targets', role: 'radiogroup', 'aria-label': '宛先' }, TARGETS.map((t) => {
+      const id = 'tg-' + t.key;
+      const input = el('input', { type: 'radio', name: 'target', id, value: t.key, checked: t.key === noticeTarget });
+      input.addEventListener('change', () => { noticeTarget = t.key; pick.hidden = t.key !== 'one'; updateCount(); });
+      return el('div', {}, [input, el('label', { htmlFor: id }, [
+        el('span', { className: 'em', 'aria-hidden': 'true', textContent: t.em }),
+        el('span', { className: 'tl' }, [el('b', { textContent: t.label }), el('small', { textContent: counts[t.key] == null ? (t.hint || '') : counts[t.key] + '人' + (t.hint ? '・' + t.hint : '') })]),
+      ])]);
+    }));
+    pick.hidden = noticeTarget !== 'one';
+
+    const text = el('textarea', { maxLength: 2000, placeholder: '例：日程が決まりました！12/20(土) 19:00〜 渋谷で開催します🍻', 'aria-label': '本文' });
+    const count = el('div', { className: 'count' });
+    const bubble = el('div', { className: 'bubble' });
+    const prev = el('div', { className: 'preview', 'aria-label': 'LINEでの見え方' }, [
+      el('div', { className: 'phone-top', textContent: 'Phoenix' }),
+      el('div', { className: 'chat' }, [mascot('happy', 'avatar'), bubble]),
+    ]);
+    const upd = () => {
+      count.textContent = text.value.length + ' / 2000';
+      bubble.textContent = text.value || 'ここにメッセージが表示されます';
+      bubble.classList.toggle('placeholder', !text.value);
+      bubble.classList.remove('pop'); void bubble.offsetWidth; bubble.classList.add('pop');
+    };
+    text.addEventListener('input', upd);
+    const tpl = el('button', { type: 'button', className: 'chip-btn', textContent: '📅 イベント情報を入れる' });
+    tpl.addEventListener('click', () => { text.value = eventTemplate(); upd(); text.focus(); });
+    const url = el('button', { type: 'button', className: 'chip-btn', textContent: '🔗 イベントサイトのURL' });
+    url.addEventListener('click', () => { text.value = (text.value ? text.value.replace(/\s*$/, '') + '\n\n' : '') + SITE; upd(); });
+
+    const quota = el('p', { className: 'note quota' });
+    function updateCount() {
+      const n = counts[noticeTarget];
+      quota.textContent = noticeTarget === 'all'
+        ? '友だち全員に送ります。無料プランは月200通まで（1人に1通で1通と数えます）。'
+        : (n + '人に送ります（' + n + '通）。無料プランは月200通までです。');
+    }
+    updateCount();
+
+    const send = el('button', { type: 'button', className: 'primary send', textContent: '送信する' });
+    send.addEventListener('click', () => {
+      const body = text.value.trim();
+      if (!body) { toast('本文を入力してください', { err: true }); text.focus(); return; }
+      if (noticeTarget === 'one' && !pick.value) { toast('送る人を選んでください', { err: true }); pick.focus(); return; }
+      const t = TARGETS.find((x) => x.key === noticeTarget);
+      const who = noticeTarget === 'one' ? pick.options[pick.selectedIndex].textContent + ' さん' : t.label + (counts[noticeTarget] == null ? '' : '（' + counts[noticeTarget] + '人）');
+      if (!confirm(who + ' に送ります。\n送ったあとは取り消せません。よろしいですか？')) return;
+      send.disabled = true; send.classList.add('flying'); send.textContent = '送信中…';
+      run().withSuccessHandler((list) => {
+        renderHistory(list);
+        flush().then(() => {
+          send.disabled = false; send.classList.remove('flying'); send.textContent = '送信する';
+          text.value = ''; upd();
+          toast('送信しました！📣'); confetti();
+          loadHistory();
+        });
+      }).withFailureHandler((err) => {
+        send.disabled = false; send.classList.remove('flying'); send.textContent = '送信する';
+        toast(err.message, { err: true });
+      }).enqueueAnnouncement({ target: noticeTarget, row: pick.value, text: body });
+    });
+
+    view.replaceChildren(
+      el('div', { className: 'notice-grid' }, [
+        el('div', {}, [
+          stagger(el('div', { className: 'panel' }, [el('h2', { textContent: '① 宛先' }), targets, pick]), 0),
+          stagger(el('div', { className: 'panel wide' }, [el('h2', { textContent: '② メッセージ' }), el('div', { className: 'chips-row' }, [tpl, url]), text, count, quota, el('div', { className: 'savebar' }, [send])]), 1),
+        ]),
+        stagger(el('div', { className: 'panel prevpanel' }, [el('h2', { textContent: '📱 LINEでの見え方' }), prev]), 2),
+      ]),
+      stagger(el('div', { className: 'panel wide' }, [el('h2', { textContent: '🕒 送信履歴' }), el('div', { id: 'history' }, [el('p', { className: 'empty', textContent: '読み込み中…' })])]), 3),
+    );
+    upd();
+    loadHistory();
+  }
+
+  function loadHistory() {
+    const r = run();
+    if (r) r.withSuccessHandler(renderHistory).withFailureHandler(() => {}).getAnnouncements();
+  }
+
+  function renderHistory(list) {
+    const box = $('history');
+    if (!box) return;
+    if (!list.length) { box.replaceChildren(el('p', { className: 'empty', textContent: 'まだお知らせは送っていません。' })); return; }
+    const cls = { '送信済み': 'yes', 'エラー': 'err', '送信待ち': 'wait', '送信中': 'wait' };
+    box.replaceChildren(el('ul', { className: 'history' }, list.map((n, i) => {
+      const head = el('div', { className: 'h-head' }, [
+        el('span', { className: 'pill ' + (cls[n.status] || 'no'), textContent: n.status }),
+        el('b', { textContent: n.targetLabel }),
+        el('small', { textContent: (n.sentAt || n.at) + (n.count ? '・' + n.count + (n.count === '全員' ? '' : '人') : '') + '・' + n.by }),
+      ]);
+      const kids = [head, el('p', { className: 'h-text', textContent: n.text })];
+      if (n.error) kids.push(el('p', { className: 'h-err', textContent: '⚠️ ' + n.error }));
+      if (n.status === '送信待ち') {
+        const b = el('button', { type: 'button', className: 'ghost-btn', textContent: '今すぐ送る' });
+        b.addEventListener('click', () => { b.disabled = true; flush().then(loadHistory); });
+        kids.push(b);
+      }
+      return stagger(el('li', {}, kids), i);
+    })));
   }
 
   // ---------- メンバー ----------
