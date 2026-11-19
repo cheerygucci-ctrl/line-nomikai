@@ -548,10 +548,21 @@ form.addEventListener('submit', async (e) => {
   try {
     const res = await api({ type: 'answer', answer: v });
     if (res.ok) return celebrate();
-    if (res.error === 'auth') banner('ログインの期限が切れたみたい。画面を閉じて、もう一度開いてね。');
-    else if (res.error === 'invalid') banner('入力内容をもう一度確認してね。');
-    else if (res.error === 'underage') banner('お酒の席なので、20歳以上の人だけ参加できます。');
-    else banner('回答は保存できたけど、メニューを出せなかったよ。主催者に連絡してね。');
+    if (res.error === 'auth') {
+      banner('ログインの期限が切れたみたい。いったん画面を閉じて、もう一度開いてね。（入力した内容は消えないように、送信ボタンをもう一度押してもOK）');
+      try { if (!liff.isInClient()) { liff.logout(); liff.login({ redirectUri: location.href }); return; } } catch (e) { /* noop */ }
+    } else if (res.error === 'invalid') {
+      // どの質問に問題があるかを探して、その質問にもどる
+      const STEP_OF = { nickname: 'nickname', age: 'adult', adult: 'adult', job: 'job', jobDetail: 'job', referral: 'referral', referrer: 'referral',
+        attend: 'attend', purpose: 'purpose', connect: 'connect', drink: 'drink', ng: 'ng', dream: 'dream', goal: 'goal', comment: 'comment', agree: 'agree' };
+      const LABEL = { nickname: 'お名前', age: '年齢', adult: '年齢', job: '職業', jobDetail: '業種・職種', referral: '知ったきっかけ', referrer: '紹介者', attend: '参加・不参加',
+        purpose: '参加の目的', connect: '仕事でつながりたい人', drink: 'お酒', ng: '食べられないもの', dream: '将来の夢', goal: '目標', comment: 'ひとこと', agree: 'ルールへの同意' };
+      const fields = (res.fields || []).filter((f) => STEP_OF[f]);
+      banner('「' + (fields.map((f) => LABEL[f]).join('」「') || '入力内容') + '」をもう一度確認してね。');
+      const i = fields.length ? visibleSteps().findIndex((s) => s.dataset.step === STEP_OF[fields[0]]) : -1;
+      if (i >= 0) { go(i, -1); const err = current().querySelector('[data-err]'); if (err) err.textContent = 'ここを確認してね'; }
+    } else if (res.error === 'underage') banner('お酒の席なので、20歳以上の人だけ参加できます。');
+    else banner('回答は保存できたけど、メニューを出せなかったよ。主催者に連絡してね。（' + (res.error || '不明') + '）');
     say('あれれ…', 'sad', 'droop');
   } catch (err) {
     banner('通信に失敗したよ。電波のいいところで、もう一度送信してね。');
