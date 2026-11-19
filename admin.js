@@ -11,6 +11,7 @@
     { key: 'list', label: '回答', em: '📝' },
     { key: 'dreams', label: '夢・つながり', em: '✨' },
     { key: 'event', label: 'イベント', em: '🍻' },
+    { key: 'members', label: 'メンバー', em: '👥' },
   ];
   const LONG_KEYS = ['greeting', 'rules', 'schedule', 'notes'];
   let data = null;
@@ -152,7 +153,67 @@
     renderList();
     renderDreams();
     renderEvent();
+    loadMembers();
     show(current);
+  }
+
+  // ---------- メンバー ----------
+  function loadMembers() {
+    const r = run();
+    if (!r) return;
+    r.withSuccessHandler(renderMembers).withFailureHandler((e) => {
+      $('view-members').replaceChildren(el('p', { className: 'empty', textContent: '読み込めませんでした：' + e.message }));
+    }).getMembers();
+  }
+
+  function renderMembers(m) {
+    const list = el('ul', { className: 'members' }, m.members.map((mail, i) => {
+      const isMe = mail === m.me;
+      const right = [];
+      if (mail === m.owner) right.push(el('span', { className: 'tag gold', textContent: '主催者' }));
+      if (isMe) right.push(el('span', { className: 'tag', textContent: 'あなた' }));
+      if (m.isOwner && !isMe) {
+        const del = el('button', { type: 'button', className: 'ghost-btn', textContent: '削除', 'aria-label': mail + ' を削除' });
+        del.addEventListener('click', () => {
+          if (!confirm(mail + ' を管理者サイトのメンバーから外しますか？\nスプレッドシートの共有も解除されます。')) return;
+          del.disabled = true;
+          run().withSuccessHandler((res) => { renderMembers(res); toast('メンバーから外しました'); })
+            .withFailureHandler((e) => { del.disabled = false; toast(e.message, { err: true }); }).removeMember(mail);
+        });
+        right.push(del);
+      }
+      return stagger(el('li', {}, [el('span', { className: 'avatar', 'aria-hidden': 'true', textContent: mail.slice(0, 1).toUpperCase() }), el('span', { className: 'mail', textContent: mail }), el('span', { className: 'right' }, right)]), i);
+    }));
+
+    const parts = [
+      el('p', { className: 'note', textContent: 'ここに登録した人だけが、この管理者サイトを見られます。登録すると回答のスプレッドシートも「編集者」として共有され、回答の閲覧とイベント情報の編集ができるようになります。' }),
+      el('div', { className: 'panel' }, [el('h2', { textContent: '👥 メンバー（' + m.members.length + '人）' }), list]),
+    ];
+    if (m.isOwner) {
+      const input = el('input', { type: 'email', placeholder: '例：friend@gmail.com', 'aria-label': '追加するメールアドレス', autocomplete: 'off' });
+      const btn = el('button', { type: 'submit', className: 'primary', textContent: '追加する' });
+      const form = el('form', { className: 'addmember', noValidate: true }, [input, btn]);
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const v = input.value.trim();
+        if (!v) { input.focus(); return; }
+        btn.disabled = true; btn.textContent = '追加中…';
+        run().withSuccessHandler((res) => {
+          renderMembers(res);
+          toast(v + ' を追加しました！'); confetti();
+        }).withFailureHandler((err) => {
+          btn.disabled = false; btn.textContent = '追加する';
+          toast(err.message, { err: true });
+        }).addMember(v);
+      });
+      parts.push(el('div', { className: 'panel wide' }, [
+        el('h2', { textContent: '➕ メンバーを追加' }), form,
+        el('p', { className: 'note', style: 'margin:10px 0 0', textContent: '追加した人には、管理者サイトのURLを送ってください。最初に開いたときだけ、Googleの「許可」を押してもらう必要があります。' }),
+      ]));
+    } else {
+      parts.push(el('p', { className: 'note', style: 'margin-top:12px', textContent: 'メンバーの追加・削除は主催者だけができます。' }));
+    }
+    $('view-members').replaceChildren(...parts);
   }
 
   function bars(kinds, count) {
