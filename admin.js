@@ -609,6 +609,7 @@
       panel('🎯 参加の目的（複数回答）', emptyOr(A.length, bars(['交流したい', '仕事の話を聞きたい', '夢・目標を話したい', 'その他'], (k) => A.filter((a) => (a.purpose || '').split('、').includes(k)).length), 'まだ回答がありません。')),
       panel('🎂 年代', emptyOr(A.length, bars(['20代', '30代', '40代', '50代以上', ''], (k) => A.filter((a) => ageGroup(a.age) === k).length), 'まだ回答がありません。')),
       panel('💼 職業', emptyOr(A.length, bars(['会社員', '経営者・役員', '個人事業主・フリーランス', '公務員', '学生', 'パート・アルバイト', 'その他', ''], (k) => A.filter((a) => (a.job || '') === k).length), 'まだ回答がありません。')),
+      panel('💡 興味のある会（複数回答）', emptyOr(A.length, bars(['飲み会', 'カフェ会', 'シーシャ会', 'その他のイベント'], (k) => A.filter((a) => (a.interest || '').split('、').includes(k)).length), 'まだ回答がありません。')),
       panel('📣 知ったきっかけ', emptyOr(A.length, bars(['知り合いの紹介', 'SNS', 'その他', ''], (k) => A.filter((a) => (a.referral || '') === k).length), 'まだ回答がありません。')),
     ].map(stagger));
 
@@ -629,7 +630,7 @@
   const DETAIL = [
     ['年齢', (a) => (a.age ? a.age + '歳' : '')],
     ['職業', (a) => (a.job || '') + (a.jobDetail ? '（' + a.jobDetail + '）' : '')], ['LINE名', 'lineName'], ['回答日時', 'at'], ['知ったきっかけ', (a) => (a.referral || '') + (a.referrer ? '（' + a.referrer + '）' : '')],
-    ['参加の目的', 'purpose'], ['仕事でつながりたい人', 'connect'], ['お酒', 'drink'], ['NG・アレルギー', 'ng'],
+    ['参加の目的', 'purpose'], ['興味のある会', 'interest'], ['仕事でつながりたい人', 'connect'], ['お酒', 'drink'], ['NG・アレルギー', 'ng'],
     ['夢・やりたいこと', 'dream'], ['目標', 'goal'], ['ひとこと', 'comment'],
   ];
   const val = (a, f) => (typeof f === 'function' ? f(a) : a[f]) || '';

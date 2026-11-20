@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>飲み会アンケート</title>
+<title>Phoenix アンケート</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
 <script src="nomy.js"></script>
 <style>
   :root {
-    --beer-top: #FFD866;
-    --beer-bottom: #F3A21C;
+    --beer-top: #FFE4CC;
+    --beer-bottom: #F3923C;
     --ink: #4A2A0A;
     --ink-soft: #7A5528;
     --card: #FFFFFF;
@@ -23,7 +23,7 @@
     margin: 0; color: var(--ink);
     font-family: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Hiragino Sans", sans-serif;
     font-size: 16px; line-height: 1.6;
-    background: linear-gradient(180deg, var(--beer-top), var(--beer-bottom)) fixed;
+    background: linear-gradient(180deg, #FFEBD6 0%, #FFC497 45%, #F59166 100%) fixed;
     overflow-x: hidden;
   }
   /* 泡のふち＋炭酸 */
@@ -34,7 +34,14 @@
     border-radius: 50%; background: rgba(255,255,255,.55); box-shadow: inset -2px -2px 0 rgba(255,255,255,.4);
     animation: rise var(--d) linear var(--delay) infinite;
   }
+  .bubbles i.em { background: none; box-shadow: none; width: auto; height: auto; font-style: normal; font-size: var(--s); line-height: 1; opacity: .5; }
   @keyframes rise { to { transform: translate(var(--drift), -110vh); } }
+  .brand { display: flex; align-items: center; justify-content: space-between; margin: 0 0 8px; }
+  .brand b { font-size: 13px; letter-spacing: .12em; color: var(--lantern); }
+  .kinds { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 12px; }
+  .kinds span { background: #FFF1E2; border: 2px solid #FFD2AE; border-radius: 999px; padding: 3px 10px; font-size: 13px; font-weight: 700; }
+  .choices.chips4 { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .choices.chips4 label { justify-content: center; padding: 10px 6px; font-size: 14px; }
 
   .app { position: relative; z-index: 1; max-width: 460px; margin: 0 auto; min-height: 100%;
     padding: calc(40px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
@@ -204,7 +211,9 @@
     <div class="loading" id="loading">ちょっと待ってね…</div>
 
     <section class="step intro" data-step="intro">
+      <div class="brand"><b>PHOENIX COMMUNITY</b></div>
       <p class="big" id="introTitle">ようこそ！</p>
+      <div class="kinds" aria-label="開催している会"><span>🍻 飲み会</span><span>☕ カフェ会</span><span>💨 シーシャ会</span><span>🎉 イベント</span></div>
       <p class="greet" id="greet">読み込み中…</p>
       <div class="rules"><b>参加ルール</b><p id="rulesTop"></p></div>
       <p id="introText">ほとんどタップで、<b>約1分</b>で終わるよ！答えると、ゲームやメニューが使えるようになるよ🎮</p>
@@ -218,11 +227,11 @@
       <div class="nav"><button type="button" class="btn ghost" data-back>もどる</button><button type="button" class="btn" data-next>つぎへ</button></div>
     </section>
 
-    <section class="step" data-step="adult" data-say="お酒の席だから、年齢を教えてね">
+    <section class="step" data-step="adult" data-say="お酒やシーシャの会もあるから、年齢を教えてね">
       <label class="q" for="age">年齢は？<span class="tag req">必須</span></label>
       <div class="age-row"><input type="text" inputmode="numeric" pattern="[0-9]*" id="age" name="age" maxlength="2" placeholder="例：28" enterkeyhint="next" autocomplete="off"><span class="unit">歳</span></div>
       <input type="hidden" name="adult" id="adult">
-      <div class="stop" id="stop">ごめんね、お酒の席なので<br>20歳以上の人だけの会なんだ。<br>また大人になったら遊びに来てね！</div>
+      <div class="stop" id="stop">ごめんね、Phoenixの会は<br>20歳以上の人が対象なんだ。<br>また大人になったら遊びに来てね！</div>
       <p class="err" data-err></p>
       <div class="nav"><button type="button" class="btn ghost" data-back>もどる</button><button type="button" class="btn" data-next>つぎへ</button></div>
     </section>
@@ -301,11 +310,20 @@
       <p class="q">もっと教えて！<span class="tag opt">ぜんぶ任意</span></p>
       <p class="hint">書かなくても大丈夫。そのまま「スキップ」でOK！</p>
       <div class="extra-item">
+        <p class="hint" id="interestQ">💡 興味のある会（いくつでも）</p>
+        <div class="choices multi chips4" role="group" aria-labelledby="interestQ">
+          <input type="checkbox" id="i1" name="interest" value="飲み会"><label for="i1">🍻 飲み会</label>
+          <input type="checkbox" id="i2" name="interest" value="カフェ会"><label for="i2">☕ カフェ会</label>
+          <input type="checkbox" id="i3" name="interest" value="シーシャ会"><label for="i3">💨 シーシャ会</label>
+          <input type="checkbox" id="i4" name="interest" value="その他のイベント"><label for="i4">🎉 その他イベント</label>
+        </div>
+      </div>
+      <div class="extra-item">
         <label class="hint" for="connect">🤝 仕事でつながりたい人</label>
         <input type="text" id="connect" name="connect" maxlength="300" placeholder="例：IT系の経営者、Webデザイナー" enterkeyhint="next">
       </div>
       <div class="extra-item going-only">
-        <p class="hint" id="drinkQ">🍺 お酒は飲む？</p>
+        <p class="hint" id="drinkQ">🍺 お酒は飲む？（飲み会の参考にするよ）</p>
         <div class="choices row" role="radiogroup" aria-labelledby="drinkQ">
           <input type="radio" id="d1" name="drink" value="飲む"><label for="d1">飲む！</label>
           <input type="radio" id="d2" name="drink" value="少し"><label for="d2">少し</label>
@@ -332,7 +350,7 @@
       <div class="rules"><b>参加ルール</b><p id="rulesBottom"></p></div>
       <label class="agree"><input type="checkbox" id="agree" name="agree"> 上のルールを守って参加します</label>
       <p class="err" data-err></p>
-      <div class="nav"><button type="button" class="btn ghost" data-back>もどる</button><button type="submit" class="btn" id="submit">送信してカンパイ！</button></div>
+      <div class="nav"><button type="button" class="btn ghost" data-back>もどる</button><button type="submit" class="btn" id="submit">送信する！🎉</button></div>
     </section>
   </form>
 </div>
@@ -343,7 +361,7 @@
     <div class="m m2" id="m2"></div>
     <div class="splash" id="splash"></div>
   </div>
-  <div class="kanpai" aria-hidden="true">カンパーイ！</div>
+  <div class="kanpai" aria-hidden="true">ようこそ！</div>
   <h2 id="doneTitle">回答ありがとうございます！</h2>
   <p>参加するなら、このまま予約しておくと安心だよ🍻</p>
   <a class="btn" id="toReserve" href="reserve.html">🎫 このまま予約する</a>
@@ -362,8 +380,8 @@ const params = new URLSearchParams(location.search);
 const PREVIEW = params.has('preview');
 const FIELDS = ['nickname', 'attend', 'drink', 'ng', 'dream', 'goal', 'comment', 'referral', 'referrer', 'adult', 'connect', 'job', 'jobDetail', 'age'];
 const SAMPLE_EVENT = {
-  greeting: 'この会は、お酒を飲みながら「将来の夢」や「これからの働き方」を気軽に語り合う交流会です。\nまずはかんたんなアンケートに答えてね！',
-  rules: '・セクハラ、パワハラ、しつこい勧誘・営業は禁止です\n・守れない場合は途中で退場していただき、次回以降も参加できません\n・お酒の席なので、20歳未満の方は参加できません',
+  greeting: 'Phoenixは、飲み会・カフェ会・シーシャ会などを通して「将来の夢」や「これからの働き方」を気軽に語り合えるコミュニティです。\nまずはかんたんなアンケートに答えてね！',
+  rules: '・セクハラ、パワハラ、しつこい勧誘・営業は禁止です\n・守れない場合は途中で退場していただき、次回以降も参加できません\n・20歳未満の方は参加できません',
 };
 const $ = (id) => document.getElementById(id);
 const form = $('form');
@@ -382,7 +400,9 @@ const nomy = $('nomyWrap').querySelector('svg');
   const box = $('bubbles');
   for (let i = 0; i < 18; i++) {
     const b = document.createElement('i');
-    const s = 4 + Math.random() * 10;
+    const icon = i % 3 === 0;
+    if (icon) { b.className = 'em'; b.textContent = ['☕', '🍻', '💨', '🎉', '🍵', '✨'][(i / 3) % 6]; }
+    const s = icon ? 16 + Math.random() * 12 : 4 + Math.random() * 10;
     b.style.cssText = `--s:${s}px;--x:${Math.random() * 100}%;--d:${6 + Math.random() * 8}s;--delay:${-Math.random() * 10}s;--drift:${(Math.random() - .5) * 60}px`;
     box.appendChild(b);
   }
@@ -447,7 +467,7 @@ function check(s) {
 
   if (k === 'purpose' && !purposes().length) msg = 'ひとつ以上選んでね';
   if (k === 'agree' && !$('agree').checked) msg = 'ルールに同意してね';
-  if (msg === ' ') { say('ごめんね…お酒の席だから20歳以上の人だけなんだ', 'sad', 'droop'); return false; }
+  if (msg === ' ') { say('ごめんね…20歳以上の人が対象なんだ', 'sad', 'droop'); return false; }
   if (err) err.textContent = msg;
   if (msg) { say(msg, 'wow', 'wiggle'); return false; }
   return true;
@@ -491,7 +511,7 @@ const AUTO_KEY = 'nomikai-autosave';
 const EXTRA = ['connect', 'drink', 'ng', 'goal', 'comment'];
 function updateExtraBtn() {
   const b = $('extraNext');
-  if (b) b.textContent = EXTRA.some((k) => String(form.elements[k].value || '').trim()) ? 'つぎへ' : 'スキップ';
+  if (b) b.textContent = EXTRA.some((k) => String(form.elements[k].value || '').trim()) || form.querySelector('input[name=interest]:checked') ? 'つぎへ' : 'スキップ';
 }
 function autosave() {
   if (PREVIEW) return;
@@ -524,7 +544,7 @@ form.addEventListener('change', (e) => {
     setTimeout(() => { if (cur === stepNow && check(current())) go(cur + 1, 1); }, 450);
   }
   if (e.target.name === 'job') setTimeout(() => { if (!$('jobDetail').value) $('jobDetail').focus({ preventScroll: true }); }, 200);
-  if (EXTRA.includes(e.target.name)) updateExtraBtn();
+  if (EXTRA.includes(e.target.name) || e.target.name === 'interest') updateExtraBtn();
   autosave();
 });
 
@@ -555,6 +575,7 @@ function getValues() {
   if (out.attend === '不参加') { out.drink = ''; out.ng = ''; }
   if (out.referral !== '知り合いの紹介') out.referrer = '';
   out.purpose = purposes();
+  out.interest = [...form.querySelectorAll('input[name=interest]:checked')].map((c) => c.value);
   out.agree = $('agree').checked;
   return out;
 }
@@ -568,6 +589,8 @@ function setValues(a) {
   });
   const ps = Array.isArray(a.purpose) ? a.purpose : [];
   form.querySelectorAll('input[name=purpose]').forEach((c) => { c.checked = ps.includes(c.value); });
+  const is = Array.isArray(a.interest) ? a.interest : [];
+  form.querySelectorAll('input[name=interest]').forEach((c) => { c.checked = is.includes(c.value); });
   $('referrerBox').classList.toggle('show', a.referral === '知り合いの紹介');
   $('agree').checked = false; // 直すときも毎回ルールに同意してもらう
   updateCounts();
@@ -680,7 +703,7 @@ form.addEventListener('submit', async (e) => {
       banner('「' + (fields.map((f) => LABEL[f]).join('」「') || '入力内容') + '」をもう一度確認してね。');
       const i = fields.length ? visibleSteps().findIndex((s) => s.dataset.step === STEP_OF[fields[0]]) : -1;
       if (i >= 0) { go(i, -1); const err = current().querySelector('[data-err]'); if (err) err.textContent = 'ここを確認してね'; }
-    } else if (res.error === 'underage') banner('お酒の席なので、20歳以上の人だけ参加できます。');
+    } else if (res.error === 'underage') banner('Phoenixの会は、20歳以上の人が対象です。');
     else banner('回答は保存できたけど、メニューを出せなかったよ。主催者に連絡してね。（' + (res.error || '不明') + '）');
     say('あれれ…', 'sad', 'droop');
   } catch (err) {
@@ -749,7 +772,7 @@ function markReturning(nickname) {
   $('introTitle').textContent = 'おかえり！';
   $('introText').textContent = 'まえの回答が入ってるよ。直したいところだけ変えてね。';
   $('startBtn').textContent = '回答を直す';
-  $('submit').textContent = '更新してカンパイ！';
+  $('submit').textContent = '更新する！';
   if (cur === 0) say(`おかえり、${nickname}さん！`, 'happy', 'jump');
 }
 
@@ -759,7 +782,7 @@ async function main() {
   showGreeting(null);
   $('loading').remove();
   go(0, 1);
-  say('やあ！ノミィだよ🍺 まずはごあいさつを読んでね！', 'happy', 'jump');
+  say('やあ！Phoenix案内係のノミィだよ！まずはごあいさつを読んでね', 'happy', 'jump');
   loadEvent().then((ev) => { if (ev) showGreeting(ev); });
 
   // 2) LINEログインから戻ってきたときは、入力していた内容を戻す
