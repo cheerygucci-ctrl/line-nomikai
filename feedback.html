@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>感想アンケート</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<script src="nomy.js"></script>
+<style>
+  :root { --coral: #E4572E; --ink: #3A220A; --sub: #7A5528; --gold: #F6B93B; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body { background: linear-gradient(180deg, #FFEBD6 0%, #FFC497 50%, #F59166 100%) fixed; color: var(--ink); font-family: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Hiragino Sans", sans-serif;
+    padding: calc(16px + env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom)); }
+  main { max-width: 440px; margin: 0 auto; }
+  .head { display: flex; align-items: center; gap: 10px; }
+  .head .nomy-box { width: 96px; flex-shrink: 0; }
+  .say { background: #fff; border-radius: 18px; padding: 10px 14px; font-weight: 900; box-shadow: 0 4px 0 rgba(0,0,0,.08); }
+  .card { background: #FFFDF8; border-radius: 24px; padding: 20px 18px; margin-top: 14px; box-shadow: 0 6px 0 rgba(0,0,0,.08); }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .q { font-weight: 900; margin: 18px 0 8px; }
+  .stars { display: flex; justify-content: space-between; gap: 4px; }
+  .stars button { flex: 1; border: 0; background: transparent; font-size: 40px; line-height: 1; cursor: pointer; filter: grayscale(1); opacity: .35; transition: transform .15s, filter .2s, opacity .2s; padding: 4px 0; }
+  .stars button.on { filter: none; opacity: 1; transform: scale(1.12); }
+  .stars button:focus-visible { outline: 3px solid var(--ink); border-radius: 12px; }
+  .label { text-align: center; font-weight: 900; color: var(--coral); min-height: 1.4em; margin-top: 4px; }
+  .choices { display: grid; gap: 8px; }
+  .choices button { border: 2px solid #FFD2AE; background: #FFF6EC; border-radius: 16px; padding: 12px; font: inherit; font-weight: 900; font-size: 15px; cursor: pointer; text-align: left; }
+  .choices button[aria-pressed="true"] { background: #fff; border-color: var(--coral); box-shadow: 0 4px 0 var(--coral); transform: translateY(-2px); }
+  textarea { width: 100%; min-height: 80px; border: 2px solid #F0DDC4; border-radius: 14px; padding: 10px 12px; font: inherit; font-size: 16px; background: #fff; }
+  .btn { display: block; width: 100%; margin-top: 18px; border: 0; border-radius: 999px; padding: 16px; font: inherit; font-weight: 900; font-size: 18px; background: var(--coral); color: #fff; box-shadow: 0 5px 0 #A93A18; cursor: pointer; text-align: center; text-decoration: none; }
+  .btn:disabled { opacity: .5; }
+  .btn.sub { background: #fff; color: var(--ink); box-shadow: 0 5px 0 rgba(0,0,0,.12); }
+  .err { color: #C0392B; font-weight: 700; margin-top: 10px; }
+  .badge { display: inline-block; background: var(--ink); color: #fff; border-radius: 999px; padding: 6px 18px; font-weight: 900; }
+  .center { text-align: center; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <div class="head"><div class="nomy-box" id="nomy"></div><div class="say" id="say">読み込み中…</div></div>
+
+  <div class="card" id="form" hidden>
+    <h1 id="title">参加ありがとう！</h1>
+    <p style="margin:0;color:var(--sub);font-weight:700">1分で終わるよ。次の会づくりの参考にします🙏</p>
+    <p class="q">満足度は？</p>
+    <div class="stars" id="stars" role="radiogroup" aria-label="満足度（5段階）"></div>
+    <div class="label" id="starLabel"></div>
+    <p class="q">また参加したい？</p>
+    <div class="choices" id="again">
+      <button type="button" aria-pressed="false" data-v="ぜひ参加したい">🙌 ぜひ参加したい！</button>
+      <button type="button" aria-pressed="false" data-v="たぶん参加する">🙂 たぶん参加する</button>
+      <button type="button" aria-pressed="false" data-v="今回はいいかな">🙇 今回はいいかな</button>
+    </div>
+    <p class="q">ひとこと（任意）</p>
+    <textarea id="comment" maxlength="500" placeholder="楽しかったこと、次にやってほしい会など"></textarea>
+    <button class="btn" id="send" type="button" disabled>送信する</button>
+    <p class="err" id="err" role="alert"></p>
+  </div>
+
+  <div class="card center" id="done" hidden>
+    <h1>ありがとう！🎉</h1>
+    <p style="font-weight:700;color:var(--sub)">あなたのこれまでの参加</p>
+    <p><span class="badge" id="badge"></span></p>
+    <p id="visits" style="font-weight:900"></p>
+    <a class="btn" id="toReserve" href="reserve.html">🎫 次の会を予約する</a>
+    <a class="btn sub" id="toGame" href="game.html">🎮 ゲームセンターへ</a>
+  </div>
+</main>
+<script>
+const LIFF_ID = '2012697224-lfwPcqYm';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycby45UwD6Ymwvnf_D_4vMbUGY_m0DUGJtse1oD3hqwHVuDASQ996Xnu2-AKLAqKheMiytQ/exec';
+const params = new URLSearchParams(location.search);
+const PREVIEW = params.has('preview');
+const $ = (id) => document.getElementById(id);
+Nomy.installCSS();
+$('nomy').innerHTML = Nomy.svg({ id: 'fn', face: 'happy' });
+const nomy = $('nomy').querySelector('svg');
+const say = (t, f, m) => { $('say').textContent = t; Nomy.setFace(nomy, f || 'happy'); if (m) Nomy.play(nomy, m); };
+
+let rating = 0, again = '';
+const LABELS = ['', 'いまいち…', 'ふつう', 'よかった！', 'とてもよかった！', '最高！！🎉'];
+const FACES = ['', 'sad', 'normal', 'happy', 'happy', 'sparkle'];
+$('stars').replaceChildren(...[1, 2, 3, 4, 5].map((n) => {
+  const b = document.createElement('button');
+  b.type = 'button'; b.textContent = '⭐'; b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', 'false'); b.setAttribute('aria-label', n + '点');
+  b.addEventListener('click', () => {
+    rating = n;
+    [...$('stars').children].forEach((x, i) => { x.classList.toggle('on', i < n); x.setAttribute('aria-checked', String(i + 1 === n)); });
+    $('starLabel').textContent = LABELS[n];
+    say(LABELS[n], FACES[n], 'jump');
+    upd();
+  });
+  return b;
+}));
+$('again').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  again = b.dataset.v;
+  [...$('again').children].forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+  upd();
+});
+function upd() { $('send').disabled = !(rating && again); }
+
+async function api(body) {
+  if (PREVIEW) { await new Promise((r) => setTimeout(r, 400)); return { ok: true, done: body.type === 'feedback' || params.has('done'), nickname: 'ありす', eventName: '年末だよ！みんなで忘年会', visits: 3, badge: '⭐ リピーター' }; }
+  const r = await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ ...body, idToken: liff.getIDToken() }) });
+  return r.json();
+}
+function showDone(res) {
+  $('form').hidden = true; $('done').hidden = false;
+  $('badge').textContent = res.badge || '🌱 これから';
+  $('visits').textContent = res.visits ? '参加 ' + res.visits + ' 回' : '';
+  say('また会おうね！🍻', 'sparkle', 'jump');
+}
+$('send').addEventListener('click', async () => {
+  $('send').disabled = true; $('err').textContent = '';
+  try {
+    const res = await api({ type: 'feedback', rating, again, comment: $('comment').value.trim() });
+    if (!res.ok) throw new Error(res.error);
+    showDone(res);
+  } catch (e) { $('err').textContent = '送れませんでした。電波のいいところでもう一度押してね。'; $('send').disabled = false; }
+});
+
+function loadSdk() {
+  if (window.liff) return Promise.resolve();
+  return new Promise((res, rej) => {
+    const sc = document.createElement('script');
+    sc.src = 'https://static.line-scdn.net/liff/edge/2/sdk.js'; sc.charset = 'utf-8';
+    sc.onload = res; sc.onerror = rej; document.head.appendChild(sc);
+    setTimeout(() => rej(new Error('timeout')), 15000);
+  });
+}
+async function main() {
+  if (!PREVIEW) {
+    try { await loadSdk(); await liff.init({ liffId: LIFF_ID }); } catch (e) { say('LINEアプリから開いてね', 'sad'); return; }
+    if (!liff.isLoggedIn()) { liff.login({ redirectUri: location.href }); return; }
+    $('toReserve').href = 'https://liff.line.me/' + LIFF_ID + '/reserve.html';
+    $('toGame').href = 'https://liff.line.me/' + LIFF_ID + '/game.html';
+  }
+  let res;
+  try { res = await api({ type: 'feedbackStatus' }); } catch (e) { say('読み込めませんでした。開き直してね', 'sad'); return; }
+  if (!res.ok) { say('読み込めませんでした。開き直してね', 'sad'); return; }
+  if (res.done) return showDone(res);
+  $('title').textContent = (res.eventName || '') + ' 参加ありがとう！';
+  $('form').hidden = false;
+  say(res.nickname + 'さん、来てくれてありがとう！', 'happy', 'jump');
+}
+main();
+</script>
+</body>
+</html>

@@ -126,6 +126,8 @@
   .extra-item { margin-top: 14px; }
   .extra-item .hint { display: block; margin: 0 0 6px; font-weight: 700; }
   .choices.row { grid-template-columns: repeat(3, 1fr); }
+  .choices.row2 { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .choices.row2 label { justify-content: center; padding: 10px 6px; font-size: 14px; }
   .choices.two { grid-template-columns: 1fr 1fr; gap: 8px; }
   .choices.two label { padding: 10px 10px; font-size: 14px; gap: 6px; }
   .choices.two label .em { font-size: 20px; }
@@ -310,6 +312,14 @@
       <p class="q">もっと教えて！<span class="tag opt">ぜんぶ任意</span></p>
       <p class="hint">書かなくても大丈夫。そのまま「スキップ」でOK！</p>
       <div class="extra-item">
+        <p class="hint" id="careerQ">💼 お仕事やキャリアの情報も受け取りたい？</p>
+        <div class="choices row2" role="radiogroup" aria-labelledby="careerQ">
+          <input type="radio" id="c1" name="career" value="受け取りたい"><label for="c1">受け取りたい</label>
+          <input type="radio" id="c2" name="career" value="今はいい"><label for="c2">今はいい</label>
+        </div>
+        <p class="hint" style="font-weight:500;font-size:12px;margin-top:6px">転職・独立・副業などの情報を、希望した人にだけ主催者からお知らせします。</p>
+      </div>
+      <div class="extra-item">
         <p class="hint" id="interestQ">💡 興味のある会（いくつでも）</p>
         <div class="choices multi chips4" role="group" aria-labelledby="interestQ">
           <input type="checkbox" id="i1" name="interest" value="飲み会"><label for="i1">🍻 飲み会</label>
@@ -378,7 +388,7 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycby45UwD6Ymwvnf_D_4vMbUG
 // ?preview=1 で LINE につながずに見た目だけ確認できる（送信もしない）
 const params = new URLSearchParams(location.search);
 const PREVIEW = params.has('preview');
-const FIELDS = ['nickname', 'attend', 'drink', 'ng', 'dream', 'goal', 'comment', 'referral', 'referrer', 'adult', 'connect', 'job', 'jobDetail', 'age'];
+const FIELDS = ['nickname', 'attend', 'drink', 'ng', 'dream', 'goal', 'comment', 'referral', 'referrer', 'adult', 'connect', 'job', 'jobDetail', 'age', 'career'];
 const SAMPLE_EVENT = {
   greeting: 'Phoenixは、飲み会・カフェ会・シーシャ会などを通して「将来の夢」や「これからの働き方」を気軽に語り合えるコミュニティです。\nまずはかんたんなアンケートに答えてね！',
   rules: '・セクハラ、パワハラ、しつこい勧誘・営業は禁止です\n・守れない場合は途中で退場していただき、次回以降も参加できません\n・20歳未満の方は参加できません',
@@ -508,7 +518,7 @@ form.addEventListener('change', (e) => {
 
 // ---------- 答えやすくする工夫 ----------
 const AUTO_KEY = 'nomikai-autosave';
-const EXTRA = ['connect', 'drink', 'ng', 'goal', 'comment'];
+const EXTRA = ['connect', 'drink', 'ng', 'goal', 'comment', 'career'];
 function updateExtraBtn() {
   const b = $('extraNext');
   if (b) b.textContent = EXTRA.some((k) => String(form.elements[k].value || '').trim()) || form.querySelector('input[name=interest]:checked') ? 'つぎへ' : 'スキップ';
@@ -696,9 +706,9 @@ form.addEventListener('submit', async (e) => {
     } else if (res.error === 'invalid') {
       // どの質問に問題があるかを探して、その質問にもどる
       const STEP_OF = { nickname: 'nickname', age: 'adult', adult: 'adult', job: 'job', jobDetail: 'job', referral: 'referral', referrer: 'referral',
-        attend: 'attend', purpose: 'purpose', connect: 'extra', drink: 'extra', ng: 'extra', dream: 'dream', goal: 'extra', comment: 'extra', agree: 'agree' };
+        attend: 'attend', purpose: 'purpose', career: 'extra', connect: 'extra', drink: 'extra', ng: 'extra', dream: 'dream', goal: 'extra', comment: 'extra', agree: 'agree' };
       const LABEL = { nickname: 'お名前', age: '年齢', adult: '年齢', job: '職業', jobDetail: '業種・職種', referral: '知ったきっかけ', referrer: '紹介者', attend: '参加・不参加',
-        purpose: '参加の目的', connect: '仕事でつながりたい人', drink: 'お酒', ng: '食べられないもの', dream: '将来の夢', goal: '目標', comment: 'ひとこと', agree: 'ルールへの同意' };
+        purpose: '参加の目的', career: 'お仕事情報', connect: '仕事でつながりたい人', drink: 'お酒', ng: '食べられないもの', dream: '将来の夢', goal: '目標', comment: 'ひとこと', agree: 'ルールへの同意' };
       const fields = (res.fields || []).filter((f) => STEP_OF[f]);
       banner('「' + (fields.map((f) => LABEL[f]).join('」「') || '入力内容') + '」をもう一度確認してね。');
       const i = fields.length ? visibleSteps().findIndex((s) => s.dataset.step === STEP_OF[fields[0]]) : -1;

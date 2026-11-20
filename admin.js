@@ -13,7 +13,7 @@
     { key: 'friends', label: '友だち', em: '👋' },
     { key: 'reserve', label: '予約', em: '🎫' },
     { key: 'list', label: '回答', em: '📝' },
-    { key: 'dreams', label: '夢', em: '✨' },
+    { key: 'analysis', label: '分析', em: '💼' },
     { key: 'notice', label: 'お知らせ', em: '📣' },
     { key: 'event', label: 'イベント', em: '🍻' },
     { key: 'members', label: 'メンバー', em: '👥' },
@@ -178,7 +178,7 @@
     renderFriends();
     renderReserve();
     renderList();
-    renderDreams();
+    renderAnalysis();
     renderEvent();
     renderNotice();
     loadMembers();
@@ -509,6 +509,7 @@
     const tile = (n, label, em, cls) => { const num = el('div', { className: 'n', textContent: '0' }); countUp(num, n); return el('div', { className: 'tile ' + (cls || '') }, [el('span', { className: 'em', 'aria-hidden': 'true', textContent: em }), num, el('div', { className: 'l', textContent: label })]); };
     const tiles = el('div', { className: 'tiles', style: 'margin-bottom:14px' }, [
       tile(wait.length, '承認待ち', '⏳', 'main'),
+      tile(R.filter((r) => r.checkedIn).length, '来場済み', '✅'),
       tile(R.filter((r) => r.status === '承認').length, '予約確定', '🎉'),
       tile(R.filter((r) => r.status === '見送り').length, '見送り', '🙇'),
       tile(R.filter((r) => r.status === 'キャンセル').length, 'キャンセル', '↩️'),
@@ -535,6 +536,8 @@
           el('div', { className: 'rhead' }, [el('b', { textContent: r.nickname || '（名前なし）' }), el('span', { className: 'pill ' + (PILL[r.status] || 'no'), textContent: LABEL[r.status] || r.status })]),
           el('div', { className: 'meta', textContent: sub }),
           r.comment ? el('div', { className: 'rcomment', textContent: '💬 ' + r.comment }) : null,
+          r.checkedIn ? el('div', { className: 'rcheck', textContent: '✅ 来場 ' + r.checkedIn.slice(5, 16) }) : null,
+          r.flag || r.memo ? el('div', { className: 'rwarn' + (r.flag ? ' flag' : ''), textContent: (r.flag ? '⚠️ 要注意：' : '📝 ') + (r.memo || '') }) : null,
           acts.length ? el('div', { className: 'racts' }, acts) : null,
         ]), i);
       }) : [el('p', { className: 'empty', textContent: reserveFilter === 'wait' ? '承認待ちの予約はありません。' : '当てはまる予約はありません。' })]));
@@ -552,8 +555,8 @@
 
   function decide(r, decision, btn) {
     const yes = decision === 'approve';
-    ask(yes ? r.nickname + ' さんの予約を承認しますか？' : r.nickname + ' さんの予約を見送りますか？',
-      yes ? '本人のLINEに「予約が確定しました」と日時・場所つきで届きます。' : '本人のLINEに、今回はご案内が難しい旨のメッセージが届きます。',
+    ask((yes && r.flag ? '⚠️ 要注意の人です。' : '') + (yes ? r.nickname + ' さんの予約を承認しますか？' : r.nickname + ' さんの予約を見送りますか？'),
+      yes ? (r.flag ? 'メモ：' + (r.memo || '') + '\n' : '') + '本人のLINEに「予約が確定しました」と日時・場所つきで届きます。' : '本人のLINEに、今回はご案内が難しい旨のメッセージが届きます。',
       yes ? '承認する' : '見送る').then((ok) => {
       if (!ok) return;
       btn.disabled = true;
@@ -619,7 +622,14 @@
       el('div', { textContent: a.connect }),
     ]), i))), 'まだ記入した人はいません。'), 'wide');
 
-    $('view-summary').replaceChildren(tiles, grid, stagger(conPanel, 5));
+    const F = data.feedback || [];
+    const avg = F.length ? (F.reduce((s, f) => s + f.rating, 0) / F.length).toFixed(1) : '—';
+    const fbPanel = panel('💬 参加者の感想（満足度 ' + avg + ' / 5・' + F.length + '件）', emptyOr(F.length, el('div', { className: 'fb' }, F.slice(0, 20).map((f, i) => stagger(el('div', { className: 'fbi' }, [
+      el('div', { className: 'fbh' }, [el('b', { textContent: f.nickname }), el('span', { textContent: '⭐'.repeat(f.rating) }), el('small', { textContent: f.again })]),
+      f.comment ? el('div', { textContent: f.comment }) : null,
+      el('small', { className: 'fbd', textContent: f.eventName + '・' + f.at }),
+    ]), i))), 'イベントの翌日に自動で感想アンケートが届き、ここに集まります。'), 'wide');
+    $('view-summary').replaceChildren(tiles, grid, stagger(conPanel, 5), stagger(fbPanel, 6));
   }
 
   function filtered(q) {
@@ -630,7 +640,7 @@
   const DETAIL = [
     ['年齢', (a) => (a.age ? a.age + '歳' : '')],
     ['職業', (a) => (a.job || '') + (a.jobDetail ? '（' + a.jobDetail + '）' : '')], ['LINE名', 'lineName'], ['回答日時', 'at'], ['知ったきっかけ', (a) => (a.referral || '') + (a.referrer ? '（' + a.referrer + '）' : '')],
-    ['参加の目的', 'purpose'], ['興味のある会', 'interest'], ['仕事でつながりたい人', 'connect'], ['お酒', 'drink'], ['NG・アレルギー', 'ng'],
+    ['参加の目的', 'purpose'], ['興味のある会', 'interest'], ['お仕事情報', 'career'], ['参加回数', (a) => (a.visits ? a.visits + '回' : '')], ['仕事でつながりたい人', 'connect'], ['お酒', 'drink'], ['NG・アレルギー', 'ng'],
     ['夢・やりたいこと', 'dream'], ['目標', 'goal'], ['ひとこと', 'comment'],
   ];
   const val = (a, f) => (typeof f === 'function' ? f(a) : a[f]) || '';
@@ -647,7 +657,7 @@
       const table = el('div', { className: 'tablewrap' }, [el('table', {}, [
         el('thead', {}, [el('tr', {}, ['回答日時', 'ニックネーム', 'LINE名', '参加', '年齢', '職業', '知ったきっかけ', '参加の目的', '仕事でつながりたい人', 'お酒', 'NG・アレルギー', '夢・やりたいこと', '目標', 'ひとこと'].map((h) => el('th', { textContent: h })))]),
         el('tbody', {}, list.map((a, i) => stagger(el('tr', {}, [
-          el('td', { textContent: a.at }), el('td', { textContent: a.nickname }), el('td', { textContent: a.lineName }),
+          el('td', { textContent: a.at }), el('td', { textContent: (a.flag ? '⚠️ ' : '') + a.nickname, title: a.memo || '' }), el('td', { textContent: a.lineName }),
           el('td', {}, [el('span', { className: 'pill ' + (a.attend === '参加' ? 'yes' : 'no'), textContent: a.attend })]),
           el('td', { textContent: a.age ? a.age + '歳' : '—' }),
           el('td', { className: 'long', textContent: val(a, DETAIL[1][1]) || '—' }),
@@ -660,13 +670,13 @@
       const cards = el('div', { className: 'cards' }, list.map((a, i) => {
         const card = el('article', { className: 'acard' });
         const head = el('button', { type: 'button', 'aria-expanded': 'false' }, [
-          el('span', { className: 'who', textContent: a.nickname }),
+          el('span', { className: 'who', textContent: (a.flag ? '⚠️ ' : '') + a.nickname }),
           el('span', {}, [el('span', { className: 'pill ' + (a.attend === '参加' ? 'yes' : 'no'), textContent: a.attend }), el('span', { className: 'chev', 'aria-hidden': 'true', textContent: ' ▾' })]),
           el('span', { className: 'meta', textContent: [a.age ? a.age + '歳' : '', a.job ? '💼 ' + a.job : '', a.purpose, a.connect ? '🤝 ' + a.connect : ''].filter(Boolean).join('　') || a.at }),
         ]);
         head.addEventListener('click', () => { const open = card.classList.toggle('open'); head.setAttribute('aria-expanded', String(open)); });
         const dl = el('dl', {}, DETAIL.flatMap(([label, f]) => [el('dt', { textContent: label }), el('dd', { textContent: val(a, f) || '—' })]));
-        card.append(head, el('div', { className: 'more' }, [el('div', {}, [dl])]));
+        card.append(head, el('div', { className: 'more' }, [el('div', {}, [dl, memoEditor(a, () => renderAll())])]));
         return stagger(card, i);
       }));
       body.replaceChildren(list.length ? table : el('p', { className: 'empty', textContent: '当てはまる回答はありません。' }), list.length ? cards : '');
@@ -761,9 +771,140 @@
     syncFriendsOnce();
   }
 
-  function renderDreams() {
+  // ---------- 分析（仕事に誘導しやすい人・つなぐと良さそうな2人） ----------
+  const DEFAULT_KW = '独立、起業、副業、年収、収入、転職、キャリア、フリーランス、経営、ビジネス、投資、お金、自由、海外、会社を作';
+  const kwList = () => String(data.leadKeywords || DEFAULT_KW).split(/[、,\n\s]+/).map((x) => x.trim()).filter(Boolean);
+  const textOf = (a) => [a.dream, a.goal, a.connect, a.comment].join(' ');
+
+  function leadScore(a) {
+    const r = [];
+    let sc = 0;
+    if (a.career === '受け取りたい') { sc += 5; r.push('💼 お仕事情報を希望'); }
+    if (a.career === '今はいい') { sc -= 3; r.push('🙅 今はいい（控えめに）'); }
+    if ((a.purpose || '').includes('仕事の話を聞きたい')) { sc += 3; r.push('仕事の話を聞きたい'); }
+    const hits = kwList().filter((k) => textOf(a).includes(k)).slice(0, 3);
+    hits.forEach((k) => { sc += 2; r.push('「' + k + '」'); });
+    if (a.connect) { sc += 1; r.push('つながりたい人あり'); }
+    if (a.visits) { sc += Math.min(2, a.visits); r.push('来場' + a.visits + '回'); }
+    if (a.attend === '参加') { sc += 1; r.push('次回参加'); }
+    return { score: sc, reasons: r, hits };
+  }
+  function approachTip(a, L) {
+    if (a.career === '受け取りたい') return '本人がお仕事情報を希望しています。個別に案内してOK。';
+    if (a.career === '今はいい') return '今は希望していません。当日は夢や目標の話を聞くだけにしましょう。';
+    if ((a.purpose || '').includes('仕事の話を聞きたい')) return '当日、仕事の話題から自然に。押しすぎはルール違反になるので注意。';
+    if (L.hits.length) return '夢「' + L.hits[0] + '」の話を聞いて、興味があれば次の機会に。';
+    return 'まずは仲良くなるところから。';
+  }
+
+  function memoEditor(a, onSaved) {
+    const ta = el('textarea', { rows: 2, maxLength: 300, placeholder: '管理者だけが見られるメモ（例：前回しつこい営業あり）', value: a.memo || '' });
+    const cb = el('input', { type: 'checkbox', checked: !!a.flag });
+    const btn = el('button', { type: 'button', className: 'ghost-btn', textContent: 'メモを保存' });
+    btn.addEventListener('click', () => {
+      btn.disabled = true;
+      run().withSuccessHandler((m) => {
+        btn.disabled = false; a.memo = m.memo; a.flag = m.flag;
+        toast(m.flag ? '⚠️ 要注意にしました' : 'メモを保存しました');
+        if (onSaved) onSaved();
+      }).withFailureHandler((e) => { btn.disabled = false; toast(e.message, { err: true }); }).saveMemo(a.row, ta.value, cb.checked);
+    });
+    return el('div', { className: 'memo-ed' + (a.flag ? ' flag' : '') }, [
+      el('div', { className: 'memo-h', textContent: '📝 管理者メモ（本人には見えません）' }), ta,
+      el('div', { className: 'memo-row' }, [el('label', {}, [cb, ' ⚠️ 要注意にする（予約・受付で警告）']), btn]),
+    ]);
+  }
+
+  function pairScore(A, B) {
+    const terms = (x) => [x.job, x.jobDetail].join('・').split(/[・、,／/\s（）()]+/).filter((t) => t.length >= 2 && t !== 'その他');
+    const r = [];
+    let sc = 0;
+    const tb = terms(B).find((t) => (A.connect || '').includes(t));
+    if (tb) { sc += 3; r.push(A.nickname + 'さんが探している「' + tb + '」'); }
+    const ta = terms(A).find((t) => (B.connect || '').includes(t));
+    if (ta) { sc += 3; r.push(B.nickname + 'さんが探している「' + ta + '」'); }
+    const kw = kwList().filter((k) => textOf(A).includes(k) && textOf(B).includes(k));
+    if (kw.length) { sc += 2; r.push('夢・目標が近い：「' + kw[0] + '」'); }
+    const ia = (A.interest || '').split('、').filter(Boolean);
+    const shared = ia.filter((x) => (B.interest || '').split('、').includes(x));
+    if (shared.length) { sc += 1; r.push('どちらも' + shared[0] + '好き'); }
+    if ((A.purpose || '').includes('仕事の話を聞きたい') && (B.purpose || '').includes('仕事の話を聞きたい')) { sc += 1; r.push('どちらも仕事の話をしたい'); }
+    return { sc, r };
+  }
+
+  function renderAnalysis() {
+    const A = data.answers;
+    const ok = A.filter((a) => !a.flag);
+    const scored = ok.map((a) => ({ a, L: leadScore(a) })).sort((x, y) => y.L.score - x.L.score);
+    const tile = (n, label, em, cls) => { const num = el('div', { className: 'n', textContent: '0' }); countUp(num, n); return el('div', { className: 'tile ' + (cls || '') }, [el('span', { className: 'em', 'aria-hidden': 'true', textContent: em }), num, el('div', { className: 'l', textContent: label })]); };
+    const tiles = el('div', { className: 'tiles', style: 'margin-bottom:14px' }, [
+      tile(scored.filter((x) => x.L.score >= 8).length, '見込み 高', '🔥', 'main'),
+      tile(A.filter((a) => a.career === '受け取りたい').length, 'お仕事情報を希望', '💼'),
+      tile(A.filter((a) => (a.purpose || '').includes('仕事の話を聞きたい')).length, '仕事の話を聞きたい', '🤝'),
+      tile(A.filter((a) => a.flag).length, '要注意', '⚠️'),
+    ].map(stagger));
+
+    const tier = (s) => (s >= 8 ? ['🔥 高い', 'hot'] : s >= 4 ? ['🌱 見込みあり', 'warm'] : ['💤 これから', 'cold']);
+    const people = el('div', { className: 'leads' }, scored.map(({ a, L }, i) => {
+      const card = el('article', { className: 'lead' });
+      const t = tier(L.score);
+      const head = el('button', { type: 'button', 'aria-expanded': 'false' }, [
+        el('span', { className: 'rank', textContent: i + 1 }),
+        el('span', { className: 'who' }, [el('b', { textContent: a.nickname }), el('small', { textContent: [a.age ? a.age + '歳' : '', a.job, a.jobDetail].filter(Boolean).join('・') })]),
+        el('span', { className: 'pill ' + t[1], textContent: t[0] + ' ' + L.score }),
+      ]);
+      head.addEventListener('click', () => { const o = card.classList.toggle('open'); head.setAttribute('aria-expanded', String(o)); });
+      const more = el('div', { className: 'more' }, [el('div', {}, [
+        el('ul', { className: 'reasons' }, L.reasons.map((x) => el('li', { textContent: x }))),
+        el('p', { className: 'tip', textContent: '👉 ' + approachTip(a, L) }),
+        a.dream ? el('p', { className: 'snip', textContent: '🌟 ' + a.dream }) : null,
+        a.goal ? el('p', { className: 'snip', textContent: '🎯 ' + a.goal }) : null,
+        a.connect ? el('p', { className: 'snip', textContent: '🤝 ' + a.connect }) : null,
+        memoEditor(a, () => renderAll()),
+      ])]);
+      card.append(head, more);
+      return stagger(card, i);
+    }));
+
+    // つなぐと良さそうな2人
+    const pairs = [];
+    for (let i = 0; i < ok.length; i++) for (let j = i + 1; j < ok.length; j++) {
+      const p = pairScore(ok[i], ok[j]);
+      if (p.sc >= 2) pairs.push({ x: ok[i], y: ok[j], ...p });
+    }
+    pairs.sort((p, q) => q.sc - p.sc);
+    const pairBox = pairs.length
+      ? el('div', { className: 'pairs' }, pairs.slice(0, 10).map((p, i) => stagger(el('div', { className: 'pair' }, [
+          el('div', { className: 'pp' }, [el('b', { textContent: p.x.nickname }), el('span', { className: 'link', textContent: '🤝' }), el('b', { textContent: p.y.nickname })]),
+          el('div', { className: 'pjob', textContent: (p.x.jobDetail || p.x.job || '') + ' × ' + (p.y.jobDetail || p.y.job || '') }),
+          el('ul', { className: 'reasons' }, p.r.map((x) => el('li', { textContent: x }))),
+        ]), i)))
+      : el('p', { className: 'empty', textContent: 'まだ組み合わせが見つかりません。回答が増えると出てきます。' });
+
+    // キーワード
+    const kwTa = el('textarea', { rows: 3, value: data.leadKeywords || DEFAULT_KW });
+    const kwBtn = el('button', { type: 'button', className: 'primary', textContent: 'キーワードを保存' });
+    kwBtn.addEventListener('click', () => {
+      kwBtn.disabled = true;
+      run().withSuccessHandler((t) => { kwBtn.disabled = false; data.leadKeywords = t; renderAnalysis(); toast('キーワードを保存しました'); })
+        .withFailureHandler((e) => { kwBtn.disabled = false; toast(e.message, { err: true }); }).saveLeadKeywords(kwTa.value);
+    });
+
+    const flagged = A.filter((a) => a.flag);
+    $('view-analysis').replaceChildren(
+      tiles,
+      el('p', { className: 'note', textContent: '回答（お仕事情報の希望・参加の目的・夢や目標の言葉・来場回数）から、あなたたちの仕事に興味を持ってくれそうな順に並べています。「お仕事情報を受け取りたい」と答えた人には、個別に案内してOKです。それ以外の人への営業は、参加ルール（しつこい勧誘の禁止）に気をつけてください。' }),
+      el('div', { className: 'panel wide' }, [el('h2', { textContent: '💼 仕事に興味を持ってくれそうな人' }), scored.length ? people : el('p', { className: 'empty', textContent: 'まだ回答がありません。' })]),
+      el('div', { className: 'panel wide', style: 'margin-top:12px' }, [el('h2', { textContent: '🤝 つなぐと良さそうな2人' }), el('p', { className: 'note', textContent: '「つながりたい人」と職業、夢・目標の近さから組み合わせを出しています。当日の席や紹介の参考に。' }), pairBox]),
+      flagged.length ? el('div', { className: 'panel wide', style: 'margin-top:12px' }, [el('h2', { textContent: '⚠️ 要注意の人（分析から外しています）' }), el('div', { className: 'leads' }, flagged.map((a) => el('article', { className: 'lead open flagcard' }, [el('div', { className: 'who', style: 'padding:12px 16px' }, [el('b', { textContent: a.nickname })]), el('div', { className: 'more' }, [el('div', {}, [memoEditor(a, () => renderAll())])])])))]) : null,
+      el('div', { className: 'panel wide', style: 'margin-top:12px' }, [el('h2', { textContent: '🔑 分析に使うキーワード' }), el('p', { className: 'note', textContent: 'あなたたちの仕事に関係しそうな言葉を「、」区切りで。夢・目標・つながりたい人・ひとことに含まれると点数が上がります。' }), kwTa, el('div', { style: 'margin-top:8px' }, [kwBtn])]),
+      el('div', { className: 'panel wide', style: 'margin-top:12px' }, [el('h2', { textContent: '✨ みんなの夢・目標' }), ...dreamsNodes()]),
+    );
+  }
+
+  function dreamsNodes() {
     const list = data.answers.filter((a) => a.dream || a.goal || a.connect);
-    $('view-dreams').replaceChildren(
+    return [
       el('p', { className: 'note', textContent: '当日の話のネタにどうぞ。夢・目標・つながりたい人のどれかを書いてくれた人だけ表示しています。' }),
       list.length
         ? el('div', { className: 'dreams' }, list.map((a, i) => {
@@ -773,7 +914,7 @@
             if (a.connect) dl.append(el('dt', { textContent: '🤝 仕事でつながりたい人' }), el('dd', { textContent: a.connect }));
             return stagger(el('div', { className: 'dream' }, [el('div', { className: 'who', textContent: a.nickname + (a.attend === '参加' ? '' : '（不参加）') }), a.job ? el('div', { className: 'note', style: 'margin:-4px 0 6px', textContent: (a.age ? a.age + '歳・' : '') + '💼 ' + val(a, DETAIL[1][1]) }) : null, dl]), i);
           }))
-        : el('p', { className: 'empty', textContent: 'まだ書いてくれた人はいません。' }));
+        : el('p', { className: 'empty', textContent: 'まだ書いてくれた人はいません。' })];
   }
 
   function renderEvent() {

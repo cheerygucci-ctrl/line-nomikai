@@ -52,6 +52,11 @@
   .confetti { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 30; }
   .confetti i { position: absolute; top: -20px; left: var(--x); width: 9px; height: 14px; background: var(--c); border-radius: 2px; animation: fall var(--d) linear var(--delay) forwards; }
   @keyframes fall { to { transform: translate(var(--drift), 110vh) rotate(var(--r)); } }
+  .qrbox { text-align: center; margin: 14px 0 4px; }
+  .qrbox #qr { display: inline-block; background: #fff; padding: 12px; border-radius: 16px; border: 3px solid var(--beer); }
+  .qrbox #qr img, .qrbox #qr canvas { display: block; width: 200px; height: 200px; }
+  .qrbox p { margin: 8px 0 0; font-weight: 900; }
+  .badge { display: inline-block; background: var(--ink); color: #fff; border-radius: 999px; padding: 4px 14px; font-weight: 900; font-size: 14px; margin-top: 10px; }
   [hidden] { display: none !important; }
   @media (prefers-reduced-motion: reduce) { .say.pop, .stamp.ok, .sheet { animation: none; } }
 </style>
@@ -80,6 +85,8 @@
     <div id="vStatus" hidden>
       <p class="msg" id="statusMsg"></p>
       <p class="note" id="statusNote"></p>
+      <div class="qrbox" id="qrbox" hidden><div id="qr" aria-label="受付用のQRコード"></div><p id="qrText">当日の受付でこのQRを見せてね</p></div>
+      <div style="text-align:center"><span class="badge" id="badge" hidden></span></div>
       <a class="btn beer" id="toEvent" href="event.html">イベントの詳細を見る</a>
       <button class="btn sub" id="cancelBtn" type="button">予約を取り消す</button>
     </div>
@@ -128,7 +135,7 @@ async function api(body) {
     if (params.has('need')) return { ok: false, error: 'not_answered' };
     if (body.type === 'reserve') previewStatus = '申請中';
     if (body.type === 'reserveCancel') previewStatus = 'キャンセル';
-    return { ok: true, status: previewStatus, nickname: 'ありす', notified: true,
+    return { ok: true, status: previewStatus, nickname: 'ありす', notified: true, code: previewStatus === '承認' ? 'abc123def456' : '', visits: 3,
       event: { name: '年末だよ！みんなで忘年会', date: '12/20(土) 19:00〜', place: '居酒屋 のんき', address: '渋谷区…', fee: '4,000円', deadline: '12/15' } };
   }
   const ctl = new AbortController();
@@ -157,6 +164,8 @@ function render(res) {
   ['vForm', 'vStatus', 'vNeed'].forEach((id) => { $(id).hidden = true; });
   const stamp = $('stamp');
   stamp.hidden = true;
+  $('qrbox').hidden = true;
+  if (res.visits) { $('badge').hidden = false; $('badge').textContent = badgeOf(res.visits) + '（参加' + res.visits + '回）'; }
   if (st === '申請中') {
     setSteps(1);
     stamp.hidden = false; stamp.className = 'stamp wait'; stamp.textContent = '承認待ち';
@@ -170,9 +179,10 @@ function render(res) {
     stamp.hidden = false; stamp.className = 'stamp ok'; stamp.textContent = '予約確定';
     $('vStatus').hidden = false;
     $('statusMsg').textContent = '🎉 予約が確定しています！';
-    $('statusNote').textContent = '当日会えるのを楽しみにしてるよ。行けなくなったときは、下のボタンから取り消してね。';
-    $('cancelBtn').hidden = false;
-    say('当日はカンパイしようね！', 'sparkle', 'jump');
+    $('statusNote').textContent = '当日会えるのを楽しみにしてるよ。受付で下のQRを見せてね。行けなくなったときは、下のボタンから取り消してね。';
+    $('cancelBtn').hidden = !!res.checkedIn;
+    showQr(res);
+    say(res.checkedIn ? '来てくれてありがとう！' : '当日はカンパイしようね！', 'sparkle', 'jump');
   } else if (st === '見送り') {
     setSteps(1);
     stamp.hidden = false; stamp.className = 'stamp no'; stamp.textContent = '見送り';
@@ -187,6 +197,28 @@ function render(res) {
     say(st === 'キャンセル' ? 'もう一度予約する？' : '内容を確認して予約してね！', 'happy');
   }
 }
+
+const CHECKIN_BASE = 'https://liff.line.me/' + LIFF_ID + '/checkin.html?c=';
+function loadQrLib() {
+  if (window.QRCode) return Promise.resolve();
+  return new Promise((res, rej) => {
+    const sc = document.createElement('script');
+    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+    sc.onload = res; sc.onerror = rej; document.head.appendChild(sc);
+  });
+}
+async function showQr(res) {
+  if (res.visits) { $('badge').hidden = false; $('badge').textContent = badgeOf(res.visits) + '（参加' + res.visits + '回）'; }
+  if (!res.code) return;
+  $('qrbox').hidden = false;
+  if (res.checkedIn) { $('qrText').textContent = '✅ 受付済み（' + res.checkedIn.slice(5, 16) + '）'; }
+  try {
+    await loadQrLib();
+    $('qr').replaceChildren();
+    new QRCode($('qr'), { text: CHECKIN_BASE + res.code, width: 400, height: 400, correctLevel: QRCode.CorrectLevel.M });
+  } catch (e) { $('qrText').textContent = 'QRを表示できませんでした。開き直してね。'; }
+}
+function badgeOf(n) { return n >= 10 ? '👑 レジェンド' : n >= 5 ? '🔥 常連さん' : n >= 3 ? '⭐ リピーター' : n >= 1 ? '🌱 はじめまして' : ''; }
 
 function confirmSheet(title, body, okText) {
   $('mTitle').textContent = title; $('mBody').textContent = body; $('mOk').textContent = okText;

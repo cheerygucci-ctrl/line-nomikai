@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>受付</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<script src="nomy.js"></script>
+<style>
+  :root { --ok: #2E9E6A; --warn: #E4572E; --ink: #2A1C0C; --sub: #8A7B6E; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body { font-family: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Hiragino Sans", sans-serif; color: var(--ink); background: #1F2A44; display: flex; align-items: center; justify-content: center;
+    padding: calc(20px + env(safe-area-inset-top)) 16px calc(20px + env(safe-area-inset-bottom)); min-height: 100vh; transition: background .4s; }
+  body.ok { background: linear-gradient(160deg, #6ED3A0, var(--ok)); }
+  body.again { background: linear-gradient(160deg, #9FB6E8, #4E6BB2); }
+  body.ng { background: linear-gradient(160deg, #F4A28C, var(--warn)); }
+  .card { background: #fff; border-radius: 28px; padding: 26px 20px; width: 100%; max-width: 420px; text-align: center; box-shadow: 0 10px 0 rgba(0,0,0,.15); animation: pop .45s cubic-bezier(.3,1.5,.5,1); }
+  @keyframes pop { from { transform: scale(.8); opacity: 0; } }
+  .nomy-box { width: 120px; margin: -70px auto 6px; }
+  .big { font-size: 30px; font-weight: 900; margin: 4px 0; }
+  .name { font-size: 26px; font-weight: 900; margin: 6px 0 2px; }
+  .sub { color: var(--sub); font-weight: 700; margin: 0; }
+  .badge { display: inline-block; background: var(--ink); color: #fff; border-radius: 999px; padding: 6px 18px; font-weight: 900; margin-top: 12px; }
+  .warn { margin-top: 16px; background: #FFF0EB; border: 3px solid var(--warn); border-radius: 16px; padding: 12px 14px; text-align: left; font-weight: 700; }
+  .warn b { color: var(--warn); display: block; margin-bottom: 4px; }
+  .note { margin-top: 16px; font-size: 13px; color: var(--sub); }
+</style>
+</head>
+<body>
+<div class="card" id="card">
+  <div class="nomy-box" id="nomy"></div>
+  <p class="big" id="big">読み込み中…</p>
+  <p class="name" id="name"></p>
+  <p class="sub" id="sub"></p>
+  <div id="badgeBox"></div>
+  <div id="warnBox"></div>
+  <p class="note">主催者用の受付画面です。次の人は、スマホのカメラでQRを読んでください。</p>
+</div>
+<script>
+const LIFF_ID = '2012697224-lfwPcqYm';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycby45UwD6Ymwvnf_D_4vMbUGY_m0DUGJtse1oD3hqwHVuDASQ996Xnu2-AKLAqKheMiytQ/exec';
+const params = new URLSearchParams(location.search);
+const PREVIEW = params.has('preview');
+const $ = (id) => document.getElementById(id);
+Nomy.installCSS();
+$('nomy').innerHTML = Nomy.svg({ id: 'cn', face: 'normal' });
+const nomy = $('nomy').querySelector('svg');
+
+function show(cls, big, name, sub, face) {
+  document.body.className = cls;
+  $('big').textContent = big; $('name').textContent = name || ''; $('sub').textContent = sub || '';
+  Nomy.setFace(nomy, face); Nomy.play(nomy, cls === 'ng' ? 'wiggle' : 'jump');
+  const c = $('card'); c.style.animation = 'none'; void c.offsetWidth; c.style.animation = '';
+}
+
+function loadSdk() {
+  if (window.liff) return Promise.resolve();
+  return new Promise((res, rej) => {
+    const sc = document.createElement('script');
+    sc.src = 'https://static.line-scdn.net/liff/edge/2/sdk.js'; sc.charset = 'utf-8';
+    sc.onload = res; sc.onerror = rej; document.head.appendChild(sc);
+    setTimeout(() => rej(new Error('timeout')), 15000);
+  });
+}
+
+async function main() {
+  const code = params.get('c') || '';
+  let res;
+  if (PREVIEW) {
+    res = { ok: true, already: params.has('again'), nickname: 'ありす', lineName: 'Alice', visits: 3, badge: '⭐ リピーター', checkedIn: '2026/12/20 19:05:00', warn: params.has('warn'), memo: params.has('warn') ? '前回しつこい営業あり。様子を見る' : '' };
+  } else {
+    try { await loadSdk(); await liff.init({ liffId: LIFF_ID }); } catch (e) { return show('ng', 'LINEで開いてね', '', 'スマホのカメラでQRを読むと、LINEで開きます', 'sad'); }
+    if (!liff.isLoggedIn()) { liff.login({ redirectUri: location.href }); return; }
+    if (!code) return show('ng', 'QRが読み取れません', '', 'もう一度カメラで読み取ってください', 'sad');
+    try {
+      const r = await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ type: 'checkin', code, idToken: liff.getIDToken() }) });
+      res = await r.json();
+    } catch (e) { return show('ng', '通信エラー', '', '電波のいいところで、もう一度読み取ってください', 'sad'); }
+  }
+  if (!res.ok) {
+    const msg = { not_staff: ['主催者だけが使えます', '「通知登録」をしたLINEで読み取ってください'], not_found: ['予約が見つかりません', 'QRが古いかもしれません'],
+      not_approved: ['予約が確定していません', '状態：' + (res.status || '') + '。管理者サイトで確認してください'], auth: ['ログインし直してね', ''], bad_code: ['QRが正しくありません', ''] }[res.error] || ['受付できませんでした', res.error || ''];
+    show('ng', msg[0], res.nickname ? res.nickname + ' さん' : '', msg[1], 'sad');
+  } else if (res.already) {
+    show('again', 'もう受付済みです', res.nickname + ' さん', '受付時間：' + (res.checkedIn || '').slice(11, 16), 'wink');
+  } else {
+    show('ok', '✅ 受付OK！', res.nickname + ' さん', 'LINE名：' + (res.lineName || '') + '　参加' + res.visits + '回目', 'sparkle');
+    if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
+  }
+  $('badgeBox').replaceChildren();
+  if (res.badge) { const b = document.createElement('span'); b.className = 'badge'; b.textContent = res.badge; $('badgeBox').append(b); }
+  $('warnBox').replaceChildren();
+  if (res.warn || res.memo) {
+    const w = document.createElement('div'); w.className = 'warn';
+    const t = document.createElement('b'); t.textContent = res.warn ? '⚠️ 要注意メモがあります' : '📝 メモ';
+    w.append(t, document.createTextNode(res.memo || ''));
+    $('warnBox').append(w);
+  }
+}
+main();
+</script>
+</body>
+</html>
