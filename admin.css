@@ -246,6 +246,15 @@ form.ev .count { font-size: 12px; color: var(--sub); text-align: right; }
 @keyframes burst { 0% { transform: translate(0,0) rotate(0); opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)) rotate(var(--r)); opacity: 0; } }
 
 /* ---------- スマホ ---------- */
+/* 予約 */
+.rcard { background: var(--panel); border-radius: 16px; padding: 12px 16px; display: grid; gap: 4px; }
+.rcard .rhead { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 16px; }
+.rcard .meta { font-size: 12px; color: var(--sub); }
+.rcard .rcomment { font-size: 14px; white-space: pre-wrap; word-break: break-word; }
+.rcard .racts { display: flex; gap: 8px; margin-top: 6px; }
+.rcard .racts button { flex: 1; }
+.code-big { font-size: 26px; font-weight: 900; letter-spacing: .06em; background: var(--gold-soft); border-radius: 12px; padding: 12px 16px; text-align: center; user-select: all; -webkit-user-select: all; }
+
 /* 友だち */
 .friends { display: grid; gap: 8px; }
 .friend { display: grid; grid-template-columns: 44px 1fr auto; gap: 12px; align-items: center; background: var(--panel); border-radius: 16px; padding: 10px 14px; }

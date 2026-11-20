@@ -3,10 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<title>ノミィの泡キャッチ</title>
+<title>ノミィのゲームセンター</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
-<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script src="nomy.js"></script>
 <style>
   :root {
@@ -17,6 +16,7 @@
     --paper: #FFF6DE;
     --ink: #2A1C0C;
     --sub: #C9D2E4;
+    --ok: #3FB27F;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; margin: 0; }
@@ -28,20 +28,24 @@
   .screen { position: fixed; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center;
     padding: calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom)); text-align: center; }
   .screen.on { display: flex; animation: in .35s ease; }
+  .screen.scroll { justify-content: flex-start; overflow-y: auto; touch-action: pan-y; -webkit-overflow-scrolling: touch; padding-top: calc(46px + env(safe-area-inset-top)); padding-bottom: calc(40px + env(safe-area-inset-bottom)); }
   @keyframes in { from { opacity: 0; transform: scale(.97); } }
   .lanterns { position: fixed; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; padding: 0 12px; pointer-events: none; z-index: 1; }
   .lanterns span { width: 30px; height: 40px; border-radius: 50%; background: var(--lantern); box-shadow: 0 0 18px rgba(228,87,46,.6); transform-origin: 50% -20px; animation: sway 3s ease-in-out infinite; }
   .lanterns span:nth-child(2) { background: var(--beer); box-shadow: 0 0 18px rgba(246,185,59,.6); animation-delay: -1s; }
   .lanterns span:nth-child(3) { animation-delay: -2s; }
   @keyframes sway { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+  body.playing .lanterns { display: none; }
 
-  .title { font-size: clamp(26px, 8vw, 36px); font-weight: 900; line-height: 1.2; margin: 6px 0; }
+  .title { font-size: clamp(24px, 7.5vw, 34px); font-weight: 900; line-height: 1.2; margin: 6px 0; }
   .title small { display: block; font-size: 14px; color: var(--sub); font-weight: 700; margin-top: 4px; }
-  .hero-nomy { width: 130px; margin: 6px auto 0; }
-  .countdown { display: inline-flex; align-items: baseline; gap: 6px; background: rgba(255,255,255,.08); border-radius: 999px; padding: 6px 16px; font-weight: 700; margin: 8px 0; }
+  .hero-nomy { width: 120px; margin: 6px auto 0; }
+  .countdown { display: inline-flex; align-items: baseline; gap: 6px; background: rgba(255,255,255,.08); border-radius: 999px; padding: 6px 16px; font-weight: 700; margin: 6px 0 4px; }
   .countdown b { font-size: 26px; color: var(--beer); font-variant-numeric: tabular-nums; }
-  .card { background: var(--paper); color: var(--ink); border-radius: 20px; padding: 14px 16px; width: 100%; max-width: 380px; margin-top: 10px; text-align: left; }
-  .card h2 { margin: 0 0 8px; font-size: 15px; }
+  .card { background: var(--paper); color: var(--ink); border-radius: 20px; padding: 14px 16px; width: 100%; max-width: 400px; margin-top: 12px; text-align: left; flex-shrink: 0; }
+  .card h2 { margin: 0 0 8px; font-size: 16px; display: flex; align-items: center; gap: 6px; }
+  .card h2 .tag { margin-left: auto; font-size: 11px; background: var(--lantern); color: #fff; border-radius: 999px; padding: 1px 8px; }
+  .card.dark { background: rgba(255,255,255,.08); color: #fff; }
   .me { display: flex; justify-content: space-between; align-items: center; font-weight: 900; }
   .me .best { font-size: 26px; color: var(--lantern); font-variant-numeric: tabular-nums; }
   ol.rank { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
@@ -52,39 +56,119 @@
   ol.rank li:nth-child(-n+3) .no span { display: none; }
   ol.rank .sc { font-variant-numeric: tabular-nums; }
   .empty { color: #8A7B6E; font-size: 14px; margin: 0; }
-  .rules { font-size: 13px; color: var(--sub); margin: 10px 0 0; line-height: 1.7; }
+  .note { font-size: 12px; color: #8A7B6E; margin: 8px 0 0; line-height: 1.6; }
   .btn { margin-top: 14px; border: 0; border-radius: 999px; padding: 15px 30px; min-width: 240px; font: inherit; font-weight: 900; font-size: 18px;
     background: var(--beer); color: var(--ink); box-shadow: 0 5px 0 #B8820F; cursor: pointer; }
   .btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #B8820F; }
   .btn.ghost { background: transparent; color: #fff; box-shadow: none; border: 2px solid rgba(255,255,255,.4); font-size: 15px; padding: 10px 24px; margin-top: 10px; }
+  .btn.small { min-width: 0; padding: 9px 18px; font-size: 15px; margin-top: 10px; }
   .btn:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
   .start-pulse { animation: pulse 1.6s ease-in-out infinite; }
   @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
 
-  /* プレイ中 */
+  /* ゲームの入口 */
+  .games { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 400px; margin-top: 12px; flex-shrink: 0; }
+  .gcard { position: relative; border: 0; border-radius: 20px; padding: 16px 10px 14px; font: inherit; color: var(--ink); cursor: pointer; text-align: center;
+    background: linear-gradient(160deg, #FFE7A3, var(--beer)); box-shadow: 0 5px 0 #B8820F; animation: bob 3s ease-in-out infinite; }
+  .gcard.k { background: linear-gradient(160deg, #FFD0BF, #F08A5D); box-shadow: 0 5px 0 #B4532C; animation-delay: -1.5s; }
+  .gcard:active { transform: translateY(3px); box-shadow: 0 2px 0 #B8820F; }
+  .gcard .em { font-size: 40px; display: block; line-height: 1.1; }
+  .gcard b { display: block; font-size: 16px; margin-top: 4px; }
+  .gcard small { display: block; font-size: 12px; margin-top: 2px; font-weight: 700; opacity: .8; }
+  .gcard .new { position: absolute; top: -8px; right: -6px; background: var(--lantern); color: #fff; font-size: 11px; font-weight: 900; border-radius: 999px; padding: 2px 9px; transform: rotate(8deg); }
+  @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+
+  /* チーム対抗戦 */
+  .myteam { font-weight: 900; font-size: 18px; margin: 0 0 8px; }
+  .myteam span { font-size: 26px; vertical-align: -3px; }
+  .bars { display: grid; gap: 8px; }
+  .bar { display: grid; grid-template-columns: max-content 1fr 3.8em; gap: 8px; align-items: center; font-weight: 700; font-size: 13px; }
+  .bar > span:first-child { white-space: nowrap; }
+  .bar .track { height: 14px; background: #EFE3C6; border-radius: 7px; overflow: hidden; }
+  .bar .fill { height: 100%; width: 0; border-radius: 7px; transition: width 1.1s cubic-bezier(.2,.9,.3,1.1); }
+  .bar.mine { color: var(--lantern); }
+  .bar .pt { text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* おみくじ */
+  .omikuji { text-align: center; }
+  .omi-box { font-size: 54px; display: inline-block; }
+  .omi-box.shake { animation: shake .12s linear 8; }
+  @keyframes shake { 0%,100% { transform: rotate(-12deg); } 50% { transform: rotate(12deg); } }
+  .omi-res { display: none; text-align: left; }
+  .omi-res.on { display: block; animation: in .4s ease; }
+  .luck { text-align: center; font-size: 34px; font-weight: 900; color: var(--lantern); margin: 2px 0 8px; }
+  .omi-res dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 6px 8px; font-size: 14px; }
+  .omi-res dt { color: #8A7B6E; font-size: 12px; padding-top: 2px; }
+  .omi-res dd { margin: 0; font-weight: 700; }
+
+  /* 当日ミッション */
+  ul.mission { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  ul.mission li { display: grid; grid-template-columns: 26px 1fr; gap: 6px; align-items: start; font-size: 14px; font-weight: 700; line-height: 1.5; }
+  ul.mission li i { font-style: normal; width: 22px; height: 22px; border: 2px solid #D8C9A5; border-radius: 6px; display: grid; place-items: center; font-size: 13px; margin-top: 1px; }
+
+  /* タブ */
+  .tabs { display: flex; gap: 4px; background: #EFE3C6; border-radius: 999px; padding: 3px; margin-bottom: 8px; }
+  .tabs button { flex: 1; border: 0; background: transparent; border-radius: 999px; padding: 6px 4px; font: inherit; font-weight: 900; font-size: 13px; color: #8A7B6E; cursor: pointer; }
+  .tabs button[aria-selected="true"] { background: var(--ink); color: #fff; }
+
+  /* 泡キャッチ */
   #play { padding: 0; justify-content: flex-start; }
   .hud { position: relative; z-index: 3; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: calc(10px + env(safe-area-inset-top)) 16px 8px; font-weight: 900; }
   .hud .score { font-size: 30px; color: var(--beer); font-variant-numeric: tabular-nums; }
   .hud .time { font-size: 18px; background: rgba(255,255,255,.12); border-radius: 999px; padding: 2px 12px; font-variant-numeric: tabular-nums; }
   .hud .time.hurry { color: var(--lantern); animation: pulse .5s infinite; }
+  .combo { position: absolute; top: calc(64px + env(safe-area-inset-top)); left: 0; right: 0; z-index: 3; font-weight: 900; font-size: 18px; color: #FFE7A3; pointer-events: none; opacity: 0; transition: opacity .2s; }
+  .combo.on { opacity: 1; }
+  .combo.pop { animation: comboPop .25s ease; }
+  @keyframes comboPop { 50% { transform: scale(1.3); } }
+  .fever { position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: 0; transition: opacity .3s;
+    background: radial-gradient(80% 60% at 50% 60%, rgba(246,185,59,.45), rgba(228,87,46,.15) 60%, transparent); }
+  #play.fever-on .fever { opacity: 1; animation: feverGlow .5s ease-in-out infinite alternate; }
+  @keyframes feverGlow { to { filter: brightness(1.3); } }
+  .feverTxt { position: absolute; top: 38%; left: 0; right: 0; z-index: 4; font-size: 46px; font-weight: 900; color: var(--beer); text-shadow: 0 4px 0 var(--lantern); pointer-events: none; opacity: 0; }
+  .feverTxt.go { animation: go 1.2s ease forwards; }
   .timebar { position: relative; z-index: 3; height: 6px; width: calc(100% - 32px); background: rgba(255,255,255,.12); border-radius: 3px; overflow: hidden; }
   .timebar i { display: block; height: 100%; width: 100%; background: var(--beer); transform-origin: left; }
-  canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; z-index: 1; }
   .player { position: absolute; bottom: calc(14px + env(safe-area-inset-bottom)); left: 0; width: 86px; z-index: 2; pointer-events: none; will-change: transform; }
-  .ready { position: absolute; inset: 0; display: grid; place-items: center; font-size: 72px; font-weight: 900; color: var(--beer); text-shadow: 0 6px 0 rgba(0,0,0,.3); z-index: 4; pointer-events: none; }
+  .ready { position: absolute; inset: 0; display: grid; place-items: center; font-size: 72px; font-weight: 900; color: var(--beer); text-shadow: 0 6px 0 rgba(0,0,0,.3); z-index: 5; pointer-events: none; }
   .ready.go { animation: go .7s ease forwards; }
   @keyframes go { from { transform: scale(.4); opacity: 0; } 40% { transform: scale(1.15); opacity: 1; } to { transform: scale(1); opacity: 1; } }
   .hint { position: absolute; bottom: calc(110px + env(safe-area-inset-bottom)); left: 0; right: 0; z-index: 3; font-size: 13px; color: var(--sub); pointer-events: none; transition: opacity .5s; }
 
+  /* ジャスト乾杯 */
+  #kanpai { justify-content: flex-start; gap: 6px; }
+  .k-head { width: 100%; max-width: 400px; display: flex; justify-content: space-between; align-items: center; font-weight: 900; }
+  .k-head .score { font-size: 28px; color: var(--beer); font-variant-numeric: tabular-nums; }
+  .k-round { display: flex; gap: 6px; }
+  .k-round i { width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,.2); }
+  .k-round i.done { background: var(--beer); }
+  .k-round i.now { background: #fff; animation: pulse .8s infinite; }
+  .k-say { min-height: 1.6em; font-weight: 900; font-size: 18px; color: #FFE7A3; }
+  .k-stage { position: relative; flex: 1; width: 100%; display: grid; place-items: center; min-height: 0; }
+  .glass { position: relative; width: min(200px, 52vw); height: min(300px, 46vh); border: 6px solid rgba(255,255,255,.85); border-top: 0; border-radius: 0 0 26px 26px; overflow: hidden; background: rgba(255,255,255,.06); }
+  .glass .beer { position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: linear-gradient(#FFD15C, #E8A21E); }
+  .glass .beer::before { content: ""; position: absolute; left: -4px; right: -4px; top: -16px; height: 20px; background: #FFF8E7; border-radius: 12px 12px 4px 4px; }
+  .glass .beer::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 30% 70%, rgba(255,255,255,.5) 2px, transparent 3px) 0 0 / 22px 26px, radial-gradient(circle at 70% 30%, rgba(255,255,255,.4) 1.5px, transparent 2.5px) 0 0 / 18px 20px; animation: fizz 1.4s linear infinite; }
+  @keyframes fizz { to { background-position: 0 -26px, 0 -20px; } }
+  .glass .target { position: absolute; left: -6px; right: -6px; height: 0; border-top: 3px dashed var(--lantern); z-index: 2; }
+  .glass .target::after { content: "ここ！"; position: absolute; right: 6px; top: -22px; font-size: 13px; font-weight: 900; color: #fff; background: var(--lantern); border-radius: 999px; padding: 0 8px; }
+  .handle { position: absolute; width: 34px; height: 110px; border: 6px solid rgba(255,255,255,.85); border-left: 0; border-radius: 0 30px 30px 0; left: calc(50% + min(100px, 26vw)); top: calc(50% - min(110px, 16vh)); }
+  .judge { position: absolute; top: 18%; left: 0; right: 0; font-size: 40px; font-weight: 900; color: var(--beer); text-shadow: 0 4px 0 rgba(0,0,0,.35); pointer-events: none; opacity: 0; z-index: 3; }
+  .judge.go { animation: go .9s ease forwards; }
+  .judge small { display: block; font-size: 18px; color: #fff; }
+  .k-btn { width: 100%; max-width: 360px; margin-bottom: 4px; font-size: 22px; padding: 20px; }
+  .k-btn:disabled { opacity: .5; }
+
   /* 結果 */
   .big-score { font-size: 64px; font-weight: 900; color: var(--beer); line-height: 1; font-variant-numeric: tabular-nums; }
   .newbest { display: inline-block; background: var(--lantern); color: #fff; border-radius: 999px; padding: 2px 12px; font-weight: 900; margin-top: 6px; animation: pulse 1s infinite; }
+  .teamgain { margin-top: 6px; font-weight: 900; color: #FFE7A3; }
   .confetti { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 10; }
   .confetti i { position: absolute; top: -20px; left: var(--x); width: 9px; height: 14px; background: var(--c); border-radius: 2px; animation: fall var(--d) linear var(--delay) forwards; }
   @keyframes fall { to { transform: translate(var(--drift), 110vh) rotate(var(--r)); } }
   .err { color: #FFB4A0; font-weight: 700; margin-top: 10px; }
-  body.playing .lanterns { display: none; }
-  @media (prefers-reduced-motion: reduce) { .lanterns span, .start-pulse, .newbest, .hud .time.hurry { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .lanterns span, .start-pulse, .newbest, .hud .time.hurry, .gcard, .glass .beer::after { animation: none; } .bar .fill { transition: none; } }
 </style>
 </head>
 <body>
@@ -94,48 +178,91 @@
 
 <section class="screen" id="need">
   <div class="hero-nomy" id="needNomy"></div>
-  <p class="title">先にアンケートに<br>答えてね！<small>答えた人だけが遊べるゲームです</small></p>
+  <p class="title">先にアンケートに<br>答えてね！<small>答えた人だけが遊べるゲームセンターです</small></p>
   <a class="btn" id="toSurvey" href="./" style="text-decoration:none">アンケートに答える</a>
 </section>
 
-<section class="screen" id="start">
+<section class="screen scroll" id="start">
   <div class="hero-nomy" id="startNomy"></div>
-  <h1 class="title">ノミィの泡キャッチ<small id="evName"></small></h1>
+  <h1 class="title">ノミィのゲームセンター<small id="evName"></small></h1>
   <div class="countdown" id="countdown"></div>
-  <div class="card">
-    <div class="me"><span id="meName">あなたのベスト</span><span><span class="best" id="meBest">0</span> 点</span></div>
-    <p class="empty" id="meRank" style="margin-top:2px"></p>
+
+  <div class="games">
+    <button class="gcard" id="goCatch" type="button"><span class="em" aria-hidden="true">🫧</span><b>泡キャッチ</b><small id="catchMe">ベスト 0点</small></button>
+    <button class="gcard k" id="goKanpai" type="button"><span class="new">NEW</span><span class="em" aria-hidden="true">🍻</span><b>ジャスト乾杯</b><small id="kanpaiMe">ベスト 0点</small></button>
   </div>
-  <div class="card"><h2>🏆 ランキング（参加者）</h2><ol class="rank" id="rankList"></ol></div>
-  <p class="rules">ジョッキを左右に動かしてキャッチ！🫧+1　🫛+3　🍗+5　🌶️−5<br>30秒でどこまでいける？ 当日、1位の人には乾杯の音頭をお願いするかも🍻</p>
-  <button class="btn start-pulse" id="startBtn" type="button">スタート！</button>
+
+  <div class="card">
+    <h2>🏁 チーム対抗戦</h2>
+    <p class="myteam" id="myTeam"></p>
+    <div class="bars" id="teamBars"></div>
+    <p class="note">チームの点数は、メンバー全員の「泡キャッチ」と「ジャスト乾杯」のベストの合計。<b>優勝チームは当日、最初の乾杯の音頭をとれる！</b>会場では同じチームの人を探して乾杯しよう🍻</p>
+  </div>
+
+  <div class="card omikuji">
+    <h2>🔮 今日のノミィおみくじ<span class="tag">毎日かわる</span></h2>
+    <div id="omiIdle"><div class="omi-box" id="omiBox" aria-hidden="true">🥠</div><br><button class="btn small" id="omiBtn" type="button">おみくじを引く</button></div>
+    <div class="omi-res" id="omiRes"></div>
+  </div>
+
+  <div class="card">
+    <h2>🎯 あなたの当日ミッション</h2>
+    <ul class="mission" id="mission"></ul>
+    <p class="note">アンケートの答えから、ノミィが考えたよ。当日のきっかけづくりにどうぞ！</p>
+  </div>
+
+  <div class="card">
+    <h2>🏆 ランキング</h2>
+    <div class="tabs" role="tablist" id="rankTabs">
+      <button type="button" role="tab" data-k="catch" aria-selected="true">🫧 泡キャッチ</button>
+      <button type="button" role="tab" data-k="kanpai" aria-selected="false">🍻 乾杯</button>
+    </div>
+    <ol class="rank" id="rankList"></ol>
+  </div>
+  <a class="btn ghost" href="event.html" style="text-decoration:none">イベントの詳細を見る</a>
 </section>
 
 <section class="screen" id="play">
+  <div class="fever" aria-hidden="true"></div>
   <div class="hud"><span class="score" id="score" aria-live="off">0</span><span class="time" id="time">30</span></div>
   <div class="timebar"><i id="timebar"></i></div>
+  <div class="combo" id="combo"></div>
   <canvas id="cv" aria-label="ゲーム画面"></canvas>
   <div class="player" id="player"></div>
-  <div class="hint" id="hint">画面をなぞってジョッキを動かしてね</div>
+  <div class="hint" id="hint">画面をなぞってジョッキを動かしてね<br>🍺でフィーバー！⏰で+3秒！</div>
+  <div class="feverTxt" id="feverTxt">FEVER!!</div>
   <div class="ready" id="ready"></div>
 </section>
 
-<section class="screen" id="result">
+<section class="screen" id="kanpai">
+  <div class="k-head"><span class="k-round" id="kRound"></span><span class="score" id="kScore">0</span></div>
+  <div class="k-say" id="kSay">線ぴったりで止めてね！</div>
+  <div class="k-stage" id="kStage">
+    <div class="glass" id="glass"><div class="beer" id="beer"></div><div class="target" id="target"></div></div>
+    <div class="handle" aria-hidden="true"></div>
+    <div class="judge" id="judge"></div>
+  </div>
+  <button class="btn k-btn" id="kBtn" type="button">注ぐ！</button>
+</section>
+
+<section class="screen scroll" id="result">
   <div class="hero-nomy" id="resNomy"></div>
-  <p style="margin:0;font-weight:700;color:var(--sub)">今回のスコア</p>
+  <p style="margin:0;font-weight:700;color:var(--sub)" id="resGame">今回のスコア</p>
   <div class="big-score" id="resScore">0</div>
   <div id="resNew"></div>
   <div class="card"><div class="me"><span>あなたのベスト</span><span><span class="best" id="resBest">0</span> 点</span></div><p class="empty" id="resRank" style="margin-top:2px"></p></div>
   <div class="card"><h2>🏆 ランキング</h2><ol class="rank" id="resRankList"></ol></div>
   <p class="err" id="resErr"></p>
   <button class="btn" id="againBtn" type="button">もう一回！</button>
-  <a class="btn ghost" href="event.html" style="text-decoration:none">イベントの詳細を見る</a>
+  <button class="btn ghost" id="homeBtn" type="button">ゲームセンターにもどる</button>
 </section>
 
-<section class="screen" id="closed">
+<section class="screen scroll" id="closed">
   <div class="hero-nomy" id="closedNomy"></div>
   <h1 class="title">ゲームは終了！<small>たくさん遊んでくれてありがとう🍻</small></h1>
-  <div class="card"><h2>🏆 最終ランキング</h2><ol class="rank" id="closedRank"></ol></div>
+  <div class="card"><h2>🏁 チーム対抗戦 最終結果</h2><div class="bars" id="closedTeams"></div></div>
+  <div class="card"><h2>🫧 泡キャッチ 最終ランキング</h2><ol class="rank" id="closedRank"></ol></div>
+  <div class="card"><h2>🍻 ジャスト乾杯 最終ランキング</h2><ol class="rank" id="closedRank2"></ol></div>
   <a class="btn ghost" href="event.html" style="text-decoration:none">イベントの詳細を見る</a>
 </section>
 
@@ -149,30 +276,46 @@ const PREVIEW = params.has('preview');
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const $ = (id) => document.getElementById(id);
 const el = (tag, props, kids) => { const e = Object.assign(document.createElement(tag), props || {}); (kids || []).forEach((k) => e.append(k)); return e; };
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const GAME_NAMES = { catch: '🫧 泡キャッチ', kanpai: '🍻 ジャスト乾杯' };
+const MAX = { catch: 999, kanpai: 500 };
 
 Nomy.installCSS();
 const nomyIn = (id, face, opts) => { $(id).innerHTML = Nomy.svg(Object.assign({ id: id + 'svg', face }, opts || {})); return $(id).querySelector('svg'); };
 nomyIn('loadNomy', 'normal');
 
 let state = null;
+let rankTab = 'catch';
 
 function show(id) {
   document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('on', s.id === id));
+  const s = $(id); if (s) s.scrollTop = 0;
 }
 
 // ---------- サーバーとのやりとり ----------
-let previewBest = 0;
+const prev = { catch: 0, kanpai: 0 };
 async function api(body) {
   if (PREVIEW) {
-    await new Promise((r) => setTimeout(r, 400));
+    await sleep(400);
     if (params.has('need')) return { ok: false, error: 'not_answered' };
-    if (body.type === 'score') previewBest = Math.max(previewBest, body.score);
-    const ranking = [{ nickname: 'でぃー', best: 88 }, { nickname: 'ありす', best: Math.max(previewBest, 41) }, { nickname: 'ぼぶ', best: 23 }].sort((a, b) => b.best - a.best);
+    if (body.type === 'score') prev[body.game] = Math.max(prev[body.game], body.score);
+    const rk = (k, others) => others.concat([{ nickname: 'ありす', best: Math.max(prev[k], k === 'catch' ? 41 : 0) }]).filter((r) => r.best > 0).sort((a, b) => b.best - a.best);
+    const rc = rk('catch', [{ nickname: 'でぃー', best: 88 }, { nickname: 'ぼぶ', best: 23 }]);
+    const rq = rk('kanpai', [{ nickname: 'でぃー', best: 312 }]);
+    const me = (k, list) => ({ best: Math.max(prev[k], k === 'catch' ? 41 : 0), rank: list.findIndex((r) => r.nickname === 'ありす') + 1 || null });
+    const teams = [{ key: 'beer', name: 'ビール組', em: '🍺', score: 400 + prev.catch + prev.kanpai, members: 3 }, { key: 'highball', name: 'ハイボール組', em: '🥃', score: 512, members: 3 }, { key: 'sour', name: 'レモンサワー組', em: '🍋', score: 130, members: 2 }].sort((a, b) => b.score - a.score);
+    const m = { nickname: 'ありす', catch: me('catch', rc), kanpai: me('kanpai', rq), team: 'beer' };
+    m.best = m.catch.best; m.rank = m.catch.rank;
     return { ok: true, open: !params.has('closed'), eventDate: params.get('date') || '2026-12-20', eventName: '年末だよ！みんなで忘年会',
-      me: { nickname: 'ありす', best: Math.max(previewBest, 41), rank: ranking.findIndex((r) => r.nickname === 'ありす') + 1 }, ranking };
+      me: m, ranking: rc, rankings: { catch: rc, kanpai: rq }, teams,
+      mission: { connect: 'IT系の経営者', purpose: ['交流したい', '仕事の話を聞きたい'], dream: 'いつか自分のカフェを開きたい', job: '会社員', attend: '参加' } };
   }
-  const res = await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ ...body, idToken: liff.getIDToken() }) });
-  return res.json();
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 20000);
+  try {
+    const res = await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ ...body, idToken: liff.getIDToken() }), signal: ctl.signal });
+    return await res.json();
+  } finally { clearTimeout(timer); }
 }
 
 function daysLeft(dateStr) {
@@ -182,13 +325,80 @@ function daysLeft(dateStr) {
   const [y, m, d] = dateStr.split('-').map(Number);
   return Math.round((Date.UTC(y, m - 1, d) - today) / 86400000);
 }
+function todayKey() { const n = new Date(Date.now() + 9 * 3600 * 1000); return n.toISOString().slice(0, 10); }
 
 function renderRank(ol, ranking, myName) {
-  ol.replaceChildren(...(ranking.length ? ranking.map((r, i) => el('li', { className: r.nickname === myName ? 'mine' : '' }, [
+  ol.replaceChildren(...(ranking && ranking.length ? ranking.map((r, i) => el('li', { className: r.nickname === myName ? 'mine' : '' }, [
     el('span', { className: 'no' }, [el('span', { textContent: i + 1 })]),
     el('span', { textContent: r.nickname }),
     el('span', { className: 'sc', textContent: r.best + '点' }),
   ])) : [el('p', { className: 'empty', textContent: 'まだ誰も遊んでいません。1番乗りしよう！' })]));
+}
+
+function renderTeams(box, teams, mine) {
+  const top = Math.max(1, ...teams.map((t) => t.score));
+  const colors = { beer: '#F6B93B', highball: '#B5763A', sour: '#E9D43B' };
+  box.replaceChildren(...teams.map((t, i) => {
+    const fill = el('div', { className: 'fill', style: `background:${colors[t.key] || '#F6B93B'}` });
+    requestAnimationFrame(() => requestAnimationFrame(() => { fill.style.width = Math.max(4, t.score / top * 100) + '%'; }));
+    return el('div', { className: 'bar' + (t.key === mine ? ' mine' : '') }, [
+      el('span', { textContent: (i === 0 && t.score > 0 ? '👑' : '') + t.em + t.name }),
+      el('div', { className: 'track' }, [fill]),
+      el('span', { className: 'pt', textContent: t.score + '点' }),
+    ]);
+  }));
+}
+
+// ---------- おみくじ（毎日かわる。名前と日付で決まるので、同じ日は何度引いても同じ） ----------
+const LUCKS = ['乾杯大吉', '大吉', '中吉', '小吉', '吉', '末吉'];
+const TOPICS = ['最近いちばん笑ったこと', '子どものころの夢', '休みの日の過ごし方', '今いちばん行きたい場所', '最近買ってよかったもの', '人生で一番おいしかったごはん',
+  '仕事で嬉しかった瞬間', '10年後どこで何してる？', 'ハマっている趣味', '尊敬している人', 'もし宝くじが当たったら', '最近はじめたこと', '得意料理', '朝型？夜型？',
+  '好きなお酒とおつまみ', '学生時代の部活', 'いつか挑戦したいこと', 'マイブーム', '最近見た映画・ドラマ', '自分を動物にたとえると'];
+const DRINKS = ['生ビール', 'ハイボール', 'レモンサワー', '梅酒ロック', '日本酒', 'ジンジャーエール', 'ウーロン茶', 'カシスオレンジ', '赤ワイン', 'ノンアルビール'];
+const WORDS = ['今日は話しかけたもん勝ち！', '笑顔が最強の名刺だよ', '聞き上手は乾杯上手', '夢は口に出すと近づくよ', '新しい出会いの予感…！', 'まずは水分補給もわすれずに', 'いい流れが来てるよ〜', '一歩ふみ出すと景色がかわるよ'];
+function hash(s) { let h = 2166136261; for (const c of s) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619) >>> 0; } return h; }
+function omikuji() {
+  const base = hash((state.me.nickname || '') + '|' + todayKey());
+  const at = (arr, salt) => arr[hash(base + ':' + salt) % arr.length];
+  const luckIdx = hash(base + ':luck') % 100;
+  const luck = luckIdx < 8 ? LUCKS[0] : luckIdx < 30 ? LUCKS[1] : luckIdx < 55 ? LUCKS[2] : luckIdx < 72 ? LUCKS[3] : luckIdx < 90 ? LUCKS[4] : LUCKS[5];
+  return { luck, topic: at(TOPICS, 'topic'), drink: at(DRINKS, 'drink'), word: at(WORDS, 'word'), number: (hash(base + ':n') % 9) + 1 };
+}
+function renderOmikuji(animate) {
+  const o = omikuji();
+  $('omiRes').replaceChildren(
+    el('div', { className: 'luck', textContent: o.luck + (o.luck === '乾杯大吉' ? '🍻✨' : '') }),
+    el('dl', {}, [
+      el('dt', { textContent: '今日の話題カード' }), el('dd', { textContent: '「' + o.topic + '」' }),
+      el('dt', { textContent: 'ラッキードリンク' }), el('dd', { textContent: o.drink }),
+      el('dt', { textContent: 'ラッキー数字' }), el('dd', { textContent: o.number + '杯目の乾杯' }),
+      el('dt', { textContent: 'ノミィより' }), el('dd', { textContent: o.word }),
+    ]),
+    el('p', { className: 'note', textContent: '明日また新しいおみくじが引けるよ。話題カードは当日の会話のきっかけにどうぞ！' }),
+  );
+  $('omiIdle').hidden = true;
+  $('omiRes').classList.add('on');
+  if (animate && o.luck === '乾杯大吉') confetti();
+}
+$('omiBtn').addEventListener('click', async () => {
+  $('omiBtn').disabled = true;
+  if (!REDUCED) { $('omiBox').classList.add('shake'); await sleep(1000); }
+  try { localStorage.setItem('nomy-omikuji', todayKey()); } catch (e) { /* noop */ }
+  renderOmikuji(true);
+});
+
+// ---------- 当日ミッション（本人の回答だけから作る） ----------
+function renderMission() {
+  const m = state.mission || {};
+  const team = (state.teams || []).find((t) => t.key === state.me.team);
+  const list = [];
+  if (team) list.push(`同じ${team.em}${team.name}の人を見つけて乾杯する`);
+  if (m.connect) list.push(`「${m.connect.slice(0, 30)}」とつながりたいことを3人に話して、紹介してもらう`);
+  else list.push('まだ話したことのない3人と乾杯する');
+  if ((m.purpose || []).includes('仕事の話を聞きたい')) list.push('1人に「今の仕事でいちばん面白いこと」を聞いてみる');
+  if (m.dream) list.push(`あなたの夢「${m.dream.slice(0, 24)}${m.dream.length > 24 ? '…' : ''}」を1人に話してみる`);
+  list.push('おみくじの「今日の話題カード」で会話をはじめてみる');
+  $('mission').replaceChildren(...list.slice(0, 4).map((t) => el('li', {}, [el('i', { textContent: '' }), el('span', { textContent: t })])));
 }
 
 function renderStart() {
@@ -196,25 +406,42 @@ function renderStart() {
   const left = daysLeft(state.eventDate);
   $('countdown').replaceChildren(...(left == null ? ['🗓️ 日程は近日発表！']
     : left > 0 ? ['🍻 開催まで あと', el('b', { textContent: left }), '日'] : ['🎉 今日が開催日！']));
-  $('meName').textContent = state.me.nickname + ' さんのベスト';
-  $('meBest').textContent = state.me.best;
-  $('meRank').textContent = state.me.rank ? '現在 ' + state.me.rank + '位' : 'まだ記録がありません';
-  renderRank($('rankList'), state.ranking, state.me.nickname);
+  const me = state.me;
+  const line = (g) => 'ベスト ' + (me[g] ? me[g].best : 0) + '点' + (me[g] && me[g].rank ? '・' + me[g].rank + '位' : '');
+  $('catchMe').textContent = line('catch');
+  $('kanpaiMe').textContent = line('kanpai');
+  const team = (state.teams || []).find((t) => t.key === me.team);
+  $('myTeam').replaceChildren(...(team ? ['あなたは ', el('span', { textContent: team.em }), team.name + '！'] : ['チームは最初に遊んだときに決まるよ']));
+  renderTeams($('teamBars'), state.teams || [], me.team);
+  renderMission();
+  let drawn = false; try { drawn = localStorage.getItem('nomy-omikuji') === todayKey(); } catch (e) { /* noop */ }
+  if (drawn) renderOmikuji(false); else { $('omiIdle').hidden = false; $('omiRes').classList.remove('on'); $('omiBtn').disabled = false; $('omiBox').classList.remove('shake'); }
+  drawRankTab();
   nomyIn('startNomy', 'happy');
 }
 
-// ---------- ゲーム本体 ----------
+function drawRankTab() {
+  $('rankTabs').querySelectorAll('button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.k === rankTab)));
+  renderRank($('rankList'), (state.rankings || {})[rankTab] || [], state.me.nickname);
+}
+$('rankTabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; rankTab = b.dataset.k; drawRankTab(); });
+
+// ---------- 泡キャッチ ----------
 const ITEMS = [
-  { em: '🫧', pts: 1, w: 50 },
-  { em: '🫛', pts: 3, w: 25 },
-  { em: '🍗', pts: 5, w: 12 },
-  { em: '🌶️', pts: -5, w: 13 },
+  { em: '🫧', pts: 1, w: 46 },
+  { em: '🫛', pts: 3, w: 23 },
+  { em: '🍗', pts: 5, w: 11 },
+  { em: '🌶️', pts: -5, w: 14 },
+  { em: '🍺', pts: 2, w: 3, fever: true },
+  { em: '⏰', pts: 0, w: 3, time: true },
 ];
 const TOTAL = 30;
+const FEVER_MS = 5000;
 const cv = $('cv');
 const ctx = cv.getContext('2d');
 let W = 0, H = 0, dpr = 1;
 let items = [], pops = [], score = 0, t0 = 0, last = 0, nextSpawn = 0, playerX = 0, running = false, raf = 0;
+let combo = 0, feverUntil = 0, bonus = 0;
 let playerSvg = null;
 
 function resize() {
@@ -230,10 +457,12 @@ function setPlayer(x) {
   $('player').style.transform = `translateX(${playerX - 43}px)`;
 }
 
-function pick() {
-  let r = Math.random() * 100;
-  for (const it of ITEMS) { if ((r -= it.w) < 0) return it; }
-  return ITEMS[0];
+function pick(fever) {
+  const pool = fever ? ITEMS.filter((it) => it.pts > 0 && !it.fever) : ITEMS;
+  const total = pool.reduce((s, it) => s + it.w, 0);
+  let r = Math.random() * total;
+  for (const it of pool) { if ((r -= it.w) < 0) return it; }
+  return pool[0];
 }
 
 function face(f, move) {
@@ -243,20 +472,31 @@ function face(f, move) {
   face.t = setTimeout(() => Nomy.setFace(playerSvg, 'normal'), 500);
 }
 
+function setCombo() {
+  const c = $('combo');
+  const mult = combo >= 10 ? 3 : combo >= 5 ? 2 : 1;
+  c.textContent = combo >= 3 ? `${combo} COMBO${mult > 1 ? '　×' + mult : ''}` : '';
+  c.classList.toggle('on', combo >= 3);
+  c.classList.remove('pop'); void c.offsetWidth; if (combo >= 3) c.classList.add('pop');
+  return mult;
+}
+
 function loop(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
   const elapsed = (now - t0) / 1000;
-  const left = Math.max(0, TOTAL - elapsed);
-  const p = elapsed / TOTAL; // 0→1 でだんだん速く
+  const left = Math.max(0, TOTAL + bonus - elapsed);
+  const p = Math.min(1, elapsed / TOTAL); // 0→1 でだんだん速く
+  const fever = now < feverUntil;
+  $('play').classList.toggle('fever-on', fever);
   $('time').textContent = Math.ceil(left);
   $('time').classList.toggle('hurry', left <= 5);
-  $('timebar').style.transform = `scaleX(${left / TOTAL})`;
+  $('timebar').style.transform = `scaleX(${Math.min(1, left / TOTAL)})`;
 
   if (now >= nextSpawn) {
-    const it = pick();
+    const it = pick(fever);
     items.push({ ...it, x: 24 + Math.random() * (W - 48), y: -30, vy: 170 + p * 260 + Math.random() * 60, rot: Math.random() * 6 });
-    nextSpawn = now + (650 - p * 380) * (0.7 + Math.random() * 0.6);
+    nextSpawn = now + (650 - p * 380) * (0.7 + Math.random() * 0.6) * (fever ? 0.35 : 1);
   }
 
   const catchY = H - 100;
@@ -267,17 +507,31 @@ function loop(now) {
   items = items.filter((it) => {
     it.y += it.vy * dt;
     if (it.y > catchY - 10 && it.y < catchY + 40 && Math.abs(it.x - playerX) < 48) {
-      score = Math.max(0, score + it.pts);
-      pops.push({ x: it.x, y: catchY - 30, txt: (it.pts > 0 ? '+' : '') + it.pts, good: it.pts > 0, life: 1 });
+      let txt;
+      if (it.time) { bonus += 3; txt = '+3秒!'; face('wow', 'jump'); }
+      else if (it.pts < 0) { combo = 0; setCombo(); score = Math.max(0, score + it.pts); txt = String(it.pts); face('sad', 'droop'); if (navigator.vibrate) navigator.vibrate(60); }
+      else {
+        combo++;
+        const mult = setCombo() * (fever ? 2 : 1);
+        const got = it.pts * mult;
+        score += got; txt = '+' + got;
+        if (it.fever) {
+          feverUntil = now + FEVER_MS; txt = 'FEVER!';
+          const f = $('feverTxt'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
+          if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
+        }
+        face(it.pts >= 5 || it.fever ? 'wow' : 'happy', it.pts >= 3 || it.fever ? 'jump' : null);
+      }
+      score = Math.min(MAX.catch, score);
+      pops.push({ x: it.x, y: catchY - 30, txt, good: it.pts >= 0, life: 1 });
       $('score').textContent = score;
-      face(it.pts > 0 ? (it.pts >= 5 ? 'wow' : 'happy') : 'sad', it.pts > 0 ? (it.pts >= 3 ? 'jump' : null) : 'droop');
-      if (navigator.vibrate && it.pts < 0) navigator.vibrate(60);
       return false;
     }
-    if (it.y > H + 40) return false;
+    if (it.y > H + 40) { if (it.pts > 0 && !it.fever && combo > 0) { combo = 0; setCombo(); } return false; }
     ctx.save();
     ctx.translate(it.x, it.y);
     if (!REDUCED) ctx.rotate(Math.sin(now / 300 + it.rot) * 0.25);
+    if (it.fever) { ctx.shadowColor = '#FFD15C'; ctx.shadowBlur = 18; }
     ctx.fillText(it.em, 0, 0);
     ctx.restore();
     return true;
@@ -292,7 +546,7 @@ function loop(now) {
     return pp.life > 0;
   });
 
-  if (left <= 0) return finish();
+  if (left <= 0) return finish('catch', score);
   raf = requestAnimationFrame(loop);
 }
 
@@ -306,28 +560,30 @@ cv.addEventListener('pointermove', move);
 cv.addEventListener('pointerdown', move);
 cv.addEventListener('touchmove', (e) => { e.preventDefault(); move(e); }, { passive: false });
 addEventListener('keydown', (e) => {
-  if (!running) return;
-  if (e.key === 'ArrowLeft') setPlayer(playerX - 40);
-  if (e.key === 'ArrowRight') setPlayer(playerX + 40);
+  if (running) {
+    if (e.key === 'ArrowLeft') setPlayer(playerX - 40);
+    if (e.key === 'ArrowRight') setPlayer(playerX + 40);
+  }
+  if (kRunning && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); kTap(); }
 });
 
 async function countdownReady() {
   const r = $('ready');
   for (const s of ['3', '2', '1', 'カンパイ！']) {
     r.textContent = s; r.classList.remove('go'); void r.offsetWidth; r.classList.add('go');
-    await new Promise((res) => setTimeout(res, REDUCED ? 300 : 650));
+    await sleep(REDUCED ? 300 : 650);
   }
   r.textContent = '';
 }
 
-async function startGame() {
+async function startCatch() {
   document.body.classList.add('playing');
   show('play');
   resize();
   $('player').innerHTML = Nomy.svg({ id: 'pl', face: 'happy' });
   playerSvg = $('player').querySelector('svg');
   setPlayer(W / 2);
-  items = []; pops = []; score = 0;
+  items = []; pops = []; score = 0; combo = 0; feverUntil = 0; bonus = 0; setCombo();
   $('score').textContent = '0'; $('time').textContent = TOTAL; $('timebar').style.transform = 'scaleX(1)';
   $('hint').style.opacity = 1;
   ctx.clearRect(0, 0, W, H);
@@ -338,67 +594,168 @@ async function startGame() {
   raf = requestAnimationFrame(loop);
 }
 
-async function finish() {
-  running = false;
+// ---------- ジャスト乾杯（5回。線ぴったりで止める） ----------
+const ROUNDS = 5;
+let kRound = 0, kTotal = 0, kLevel = 0, kTarget = 0, kRunning = false, kRaf = 0, kStartAt = 0, kSpeed = 0, kWobble = 0, kPhase = 'idle';
+
+function kDots() {
+  $('kRound').replaceChildren(...Array.from({ length: ROUNDS }, (_, i) => el('i', { className: i < kRound ? 'done' : i === kRound ? 'now' : '' })));
+}
+
+function kSetLevel(v) {
+  kLevel = v;
+  $('beer').style.height = Math.min(100, v) + '%';
+}
+
+function kRoundStart() {
+  kTarget = 55 + Math.random() * 35;
+  $('target').style.bottom = kTarget + '%';
+  kSetLevel(0);
+  kDots();
+  kSpeed = 30 + kRound * 9 + Math.random() * 8;   // 1秒に何％たまるか
+  kWobble = kRound >= 2 ? 0.35 + kRound * 0.08 : 0; // 後半はスピードがゆれる
+  kPhase = 'ready';
+  $('kBtn').textContent = '注ぐ！';
+  $('kBtn').disabled = false;
+  $('kSay').textContent = kRound === 0 ? '「注ぐ！」で注ぎはじめて、線で止めてね' : `${kRound + 1}杯目！${kWobble ? 'だんだんクセが…' : ''}`;
+}
+
+function kLoop(now) {
+  const t = (now - kStartAt) / 1000;
+  const v = kSpeed * t + (kWobble ? Math.sin(t * 5) * kWobble * 8 : 0);
+  kSetLevel(Math.max(0, v));
+  if (kLevel >= 100) { kStop(true); return; }
+  kRaf = requestAnimationFrame(kLoop);
+}
+
+function kTap() {
+  if (kPhase === 'ready') {
+    kPhase = 'pour';
+    $('kBtn').textContent = 'ストップ！';
+    $('kSay').textContent = '……いまだ！';
+    kStartAt = performance.now();
+    kRaf = requestAnimationFrame(kLoop);
+  } else if (kPhase === 'pour') kStop(false);
+}
+
+async function kStop(over) {
+  cancelAnimationFrame(kRaf);
+  kPhase = 'judge';
+  $('kBtn').disabled = true;
+  const diff = Math.abs(kLevel - kTarget);
+  let pts = over ? 0 : Math.max(0, Math.round(100 - diff * 6));
+  if (!over && diff <= 1) pts = 100;
+  const label = over ? 'あふれた〜！' : diff <= 1 ? 'PERFECT!!' : diff <= 3 ? 'GREAT!' : diff <= 7 ? 'GOOD!' : 'おしい！';
+  kTotal += pts;
+  $('kScore').textContent = kTotal;
+  const j = $('judge');
+  j.replaceChildren(label, el('small', { textContent: '+' + pts + '点' }));
+  j.classList.remove('go'); void j.offsetWidth; j.classList.add('go');
+  if (navigator.vibrate) navigator.vibrate(over ? 120 : diff <= 3 ? [20, 30, 20] : 30);
+  if (diff <= 1 && !over && !REDUCED) confetti(20);
+  await sleep(1100);
+  j.classList.remove('go');
+  kRound++;
+  if (kRound >= ROUNDS) { kRunning = false; kDots(); return finish('kanpai', Math.min(MAX.kanpai, kTotal)); }
+  kRoundStart();
+}
+
+$('kBtn').addEventListener('click', kTap);
+$('kStage').addEventListener('pointerdown', () => { if (kRunning) kTap(); });
+
+async function startKanpai() {
+  document.body.classList.add('playing');
+  show('kanpai');
+  kRound = 0; kTotal = 0; $('kScore').textContent = '0';
+  kRunning = true;
+  kRoundStart();
+}
+
+// ---------- 結果 ----------
+let lastGame = 'catch';
+async function finish(game, sc) {
+  running = false; kRunning = false;
+  lastGame = game;
   document.body.classList.remove('playing');
+  $('play').classList.remove('fever-on');
   cancelAnimationFrame(raf);
-  const before = state.me.best;
-  $('resScore').textContent = score;
+  const before = (state.me[game] || { best: 0 }).best;
+  $('resGame').textContent = GAME_NAMES[game] + '　今回のスコア';
+  $('resScore').textContent = sc;
   $('resErr').textContent = '';
   $('resNew').replaceChildren();
   show('result');
-  const resN = nomyIn('resNomy', score > before ? 'sparkle' : 'happy');
+  const resN = nomyIn('resNomy', sc > before ? 'sparkle' : 'happy');
   Nomy.play(resN, 'jump');
   try {
-    const res = await api({ type: 'score', score });
+    const res = await api({ type: 'score', game, score: sc });
     if (res.ok) state = res;
     else if (res.error === 'closed') { state.open = false; $('resErr').textContent = 'ゲームの期間が終わったので、今回の記録は残りませんでした。'; }
     else $('resErr').textContent = '記録を保存できませんでした。もう一度遊ぶと保存されます。';
   } catch (e) {
     $('resErr').textContent = '通信に失敗しました。電波のいいところでもう一度遊んでね。';
   }
-  $('resBest').textContent = state.me.best;
-  $('resRank').textContent = state.me.rank ? '現在 ' + state.me.rank + '位' : '';
-  renderRank($('resRankList'), state.ranking, state.me.nickname);
-  if (score > before && score > 0) {
+  const me = state.me[game] || { best: 0, rank: null };
+  $('resBest').textContent = me.best;
+  $('resRank').textContent = me.rank ? '現在 ' + me.rank + '位' : '';
+  renderRank($('resRankList'), (state.rankings || {})[game] || [], state.me.nickname);
+  if (sc > before && sc > 0) {
+    const team = (state.teams || []).find((t) => t.key === state.me.team);
     $('resNew').append(el('span', { className: 'newbest', textContent: '自己ベスト更新！' }));
+    if (team) $('resNew').append(el('div', { className: 'teamgain', textContent: `${team.em}${team.name}に +${sc - before}点 貢献！` }));
     confetti();
   }
   $('againBtn').hidden = !state.open;
 }
 
-function confetti() {
+function confetti(n) {
   if (REDUCED) return;
   const box = $('confetti');
   box.replaceChildren();
   const colors = ['#F6B93B', '#E4572E', '#fff', '#7CC4F2'];
-  for (let i = 0; i < 50; i++) {
+  for (let i = 0; i < (n || 50); i++) {
     box.append(el('i', { style: `--x:${Math.random() * 100}%;--c:${colors[i % 4]};--d:${2 + Math.random() * 2}s;--delay:${Math.random() * .5}s;--drift:${(Math.random() - .5) * 120}px;--r:${(Math.random() - .5) * 900}deg` }));
   }
 }
 
-$('startBtn').addEventListener('click', startGame);
-$('againBtn').addEventListener('click', () => { renderStart(); startGame(); });
+$('goCatch').addEventListener('click', startCatch);
+$('goKanpai').addEventListener('click', startKanpai);
+$('againBtn').addEventListener('click', () => (lastGame === 'kanpai' ? startKanpai() : startCatch()));
+$('homeBtn').addEventListener('click', () => { renderStart(); show('start'); });
 
 // ---------- はじめる ----------
+function loadSdk() {
+  if (window.liff) return Promise.resolve();
+  return new Promise((res, rej) => {
+    const sc = document.createElement('script');
+    sc.src = 'https://static.line-scdn.net/liff/edge/2/sdk.js'; sc.charset = 'utf-8';
+    sc.onload = res; sc.onerror = rej;
+    document.head.appendChild(sc);
+    setTimeout(() => rej(new Error('timeout')), 15000);
+  });
+}
+
 async function main() {
+  const msg = (t) => { $('loading').querySelector('p').textContent = t; };
   if (!PREVIEW) {
-    try { await liff.init({ liffId: LIFF_ID }); } catch (e) { $('loading').querySelector('p').textContent = 'LINEアプリから開いてね。'; return; }
+    try { await loadSdk(); await liff.init({ liffId: LIFF_ID }); } catch (e) { msg('LINEアプリから開いてね。'); return; }
     if (!liff.isLoggedIn()) { liff.login({ redirectUri: location.href }); return; }
     $('toSurvey').href = 'https://liff.line.me/' + LIFF_ID;
   }
   let res;
-  try { res = await api({ type: 'game' }); } catch (e) { $('loading').querySelector('p').textContent = '読み込めませんでした。開き直してね。'; return; }
+  try { res = await api({ type: 'game' }); } catch (e) { msg('読み込めませんでした。開き直してね。'); return; }
   if (!res.ok) {
     if (res.error === 'not_answered') { nomyIn('needNomy', 'wink'); show('need'); return; }
-    if (res.error === 'auth' && !PREVIEW) { liff.logout(); liff.login({ redirectUri: location.href }); return; }
-    $('loading').querySelector('p').textContent = '読み込めませんでした。開き直してね。';
+    if (res.error === 'auth' && !PREVIEW && !liff.isInClient()) { liff.logout(); liff.login({ redirectUri: location.href }); return; }
+    msg('読み込めませんでした。開き直してね。');
     return;
   }
   state = res;
   if (!state.open) {
     nomyIn('closedNomy', 'happy');
-    renderRank($('closedRank'), state.ranking, state.me.nickname);
+    renderTeams($('closedTeams'), state.teams || [], state.me.team);
+    renderRank($('closedRank'), (state.rankings || {}).catch || state.ranking, state.me.nickname);
+    renderRank($('closedRank2'), (state.rankings || {}).kanpai || [], state.me.nickname);
     show('closed');
     return;
   }

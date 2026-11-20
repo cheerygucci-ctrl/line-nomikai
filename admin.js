@@ -11,6 +11,7 @@
   const TABS = [
     { key: 'summary', label: '概要', em: '📊' },
     { key: 'friends', label: '友だち', em: '👋' },
+    { key: 'reserve', label: '予約', em: '🎫' },
     { key: 'list', label: '回答', em: '📝' },
     { key: 'dreams', label: '夢', em: '✨' },
     { key: 'notice', label: 'お知らせ', em: '📣' },
@@ -117,7 +118,7 @@
     const tabs = el('nav', { className: 'tabs', role: 'tablist', 'aria-label': '画面の切り替え' },
       TABS.map((t) => {
         const b = el('button', { type: 'button', role: 'tab', id: 'tab-' + t.key, 'aria-selected': String(t.key === current), 'aria-controls': 'view-' + t.key },
-          [el('span', { className: 'em', 'aria-hidden': 'true', textContent: t.em }), el('span', { textContent: t.label })]);
+          [el('span', { className: 'em', 'aria-hidden': 'true', textContent: t.em }), el('span', { textContent: t.label }), el('span', { className: 'badge', id: 'badge-' + t.key, hidden: true })]);
         b.addEventListener('click', () => show(t.key));
         return b;
       }));
@@ -175,6 +176,7 @@
     $('evName').textContent = ev.name + '｜' + ev.date;
     renderSummary();
     renderFriends();
+    renderReserve();
     renderList();
     renderDreams();
     renderEvent();
@@ -205,6 +207,19 @@
     const lines = ['📣 ' + ev.name + ' のお知らせ', '', '📅 日時：' + ev.date, '📍 場所：' + ev.place + (ev.address ? '（' + ev.address + '）' : ''), '💰 会費：' + ev.fee];
     if (ev.deadline) lines.push('⏰ 回答の締切：' + ev.deadline);
     lines.push('', '詳しくはこちら👇', SITE);
+    return lines.join('\n');
+  }
+
+  function rankingTemplate() {
+    const g = data.game || { catch: [], kanpai: [], teams: [] };
+    const medal = ['🥇', '🥈', '🥉'];
+    const list = (arr) => (arr.length ? arr.map((r, i) => medal[i] + ' ' + r.nickname + '　' + r.best + '点').join('\n') : 'まだ記録なし！今なら1位のチャンス✨');
+    const lines = ['🏆 ノミィのゲームセンター 途中経過！', '', '🫧 泡キャッチ', list(g.catch), '', '🍻 ジャスト乾杯', list(g.kanpai)];
+    if (g.teams && g.teams.length) {
+      lines.push('', '🏁 チーム対抗戦（優勝チームは当日の乾杯の音頭！）');
+      g.teams.forEach((t, i) => lines.push((i + 1) + '位 ' + t.em + t.name + '　' + t.score + '点'));
+    }
+    lines.push('', '開催日まで何回でも挑戦できるよ👇', 'https://liff.line.me/2012697224-lfwPcqYm/game.html');
     return lines.join('\n');
   }
 
@@ -264,7 +279,9 @@
     const remind = el('button', { type: 'button', className: 'chip-btn', textContent: '🔔 当日リマインド' });
     remind.addEventListener('click', () => { text.value = remindTemplate(); upd(); text.focus(); });
     const game = el('button', { type: 'button', className: 'chip-btn', textContent: '🎮 ゲームのお誘い' });
-    game.addEventListener('click', () => { text.value = '🎮 開催までの待ち時間に、ミニゲーム「ノミィの泡キャッチ」で遊ぼう！\n参加者ランキングの1位は誰だ…？🍻\n\nhttps://liff.line.me/2012697224-lfwPcqYm/game.html'; upd(); text.focus(); });
+    game.addEventListener('click', () => { text.value = '🎮 開催までの待ち時間に「ノミィのゲームセンター」で遊ぼう！\n🫧泡キャッチ・🍻ジャスト乾杯・🔮毎日おみくじ・🏁チーム対抗戦\n\nhttps://liff.line.me/2012697224-lfwPcqYm/game.html'; upd(); text.focus(); });
+    const rank = el('button', { type: 'button', className: 'chip-btn', textContent: '🏆 ランキング' });
+    rank.addEventListener('click', () => { text.value = rankingTemplate(); upd(); text.focus(); });
 
     // いつ送るか：今すぐ／日時を指定して予約
     const whenNow = el('input', { type: 'radio', name: 'when', id: 'when-now', checked: true });
@@ -337,7 +354,7 @@
       el('div', { className: 'notice-grid' }, [
         el('div', {}, [
           stagger(el('div', { className: 'panel' }, [el('h2', { textContent: '① 宛先' }), targets, pick]), 0),
-          stagger(el('div', { className: 'panel wide' }, [el('h2', { textContent: '② メッセージ' }), el('div', { className: 'chips-row' }, [tpl, remind, game, url]), text, count, quota, when, el('div', { className: 'savebar' }, [send])]), 1),
+          stagger(el('div', { className: 'panel wide' }, [el('h2', { textContent: '② メッセージ' }), el('div', { className: 'chips-row' }, [tpl, remind, game, rank, url]), text, count, quota, when, el('div', { className: 'savebar' }, [send])]), 1),
         ]),
         stagger(el('div', { className: 'panel prevpanel' }, [el('h2', { textContent: '📱 LINEでの見え方' }), prev]), 2),
       ]),
@@ -446,7 +463,108 @@
     } else {
       parts.push(el('p', { className: 'note', style: 'margin-top:12px', textContent: 'メンバーの追加・削除は主催者だけができます。' }));
     }
+    parts.push(notifyPanel(m));
     $('view-members').replaceChildren(...parts);
+  }
+
+  // 予約の通知をLINEで受け取る（6桁の番号をPhoenixのトークに送ってもらう）
+  function notifyPanel(m) {
+    const count = el('p', { className: 'note', style: 'margin:0 0 10px' });
+    const setCount = (n) => { count.textContent = n ? `いま ${n} 人がLINEで予約の通知を受け取っています。` : 'まだ誰も登録していません。'; };
+    setCount((data && data.organizerCount) || 0);
+    const out = el('div');
+    const btn = el('button', { type: 'button', className: 'primary', textContent: '番号を発行する' });
+    btn.addEventListener('click', () => {
+      btn.disabled = true;
+      run().withSuccessHandler((r) => {
+        btn.disabled = false;
+        const codeEl = el('div', { className: 'code-big', textContent: '通知登録 ' + r.code });
+        out.replaceChildren(
+          el('p', { className: 'note', style: 'margin:12px 0 6px', textContent: '公式LINE「Phoenix」のトークに、次の文字をそのまま送ってください（30分以内・1回だけ使えます）。' }),
+          codeEl,
+        );
+        toast('番号を発行しました');
+      }).withFailureHandler((e) => { btn.disabled = false; toast(e.message, { err: true }); }).issueOrganizerCode();
+    });
+    const kids = [el('h2', { textContent: '📲 予約の通知をLINEで受け取る' }), count, btn, out];
+    if (m.isOwner) {
+      const clear = el('button', { type: 'button', className: 'ghost-btn', style: 'margin-top:12px', textContent: '通知の受け取りを全員解除' });
+      clear.addEventListener('click', () => ask('通知の受け取りを全員解除しますか？', '解除すると、予約が入ってもLINEには届きません（管理者サイトでは見られます）。', '解除する').then((yes) => {
+        if (!yes) return;
+        run().withSuccessHandler((r) => { setCount(r.count); toast('解除しました'); }).withFailureHandler((e) => toast(e.message, { err: true })).clearOrganizers();
+      }));
+      kids.push(el('div', {}, [clear]));
+    }
+    return el('div', { className: 'panel wide', style: 'margin-top:12px' }, kids);
+  }
+
+  // ---------- 予約 ----------
+  let reserveFilter = 'wait';
+  const R_FILTERS = [{ key: 'wait', label: '承認待ち' }, { key: 'ok', label: '確定' }, { key: 'all', label: 'すべて' }];
+  function renderReserve() {
+    const R = data.reservations || [];
+    const wait = R.filter((r) => r.status === '申請中');
+    const badge = $('badge-reserve');
+    if (badge) { badge.textContent = wait.length; badge.hidden = !wait.length; }
+    const tile = (n, label, em, cls) => { const num = el('div', { className: 'n', textContent: '0' }); countUp(num, n); return el('div', { className: 'tile ' + (cls || '') }, [el('span', { className: 'em', 'aria-hidden': 'true', textContent: em }), num, el('div', { className: 'l', textContent: label })]); };
+    const tiles = el('div', { className: 'tiles', style: 'margin-bottom:14px' }, [
+      tile(wait.length, '承認待ち', '⏳', 'main'),
+      tile(R.filter((r) => r.status === '承認').length, '予約確定', '🎉'),
+      tile(R.filter((r) => r.status === '見送り').length, '見送り', '🙇'),
+      tile(R.filter((r) => r.status === 'キャンセル').length, 'キャンセル', '↩️'),
+    ].map(stagger));
+    const btns = R_FILTERS.map((x) => el('button', { type: 'button', textContent: x.label, 'aria-pressed': String(reserveFilter === x.key) }));
+    const body = el('div', { className: 'friends' });
+    const PILL = { '申請中': 'wait', '承認': 'yes', '見送り': 'no', 'キャンセル': 'no' };
+    const LABEL = { '申請中': '承認待ち', '承認': '確定', '見送り': '見送り', 'キャンセル': 'キャンセル' };
+    const draw = () => {
+      const list = R.filter((r) => reserveFilter === 'all' || (reserveFilter === 'wait' ? r.status === '申請中' : r.status === '承認'));
+      body.replaceChildren(...(list.length ? list.map((r, i) => {
+        const acts = [];
+        if (r.status === '申請中' || r.status === '承認' || r.status === '見送り') {
+          const mk = (label, decision, cls) => {
+            const b = el('button', { type: 'button', className: cls, textContent: label });
+            b.addEventListener('click', () => decide(r, decision, b));
+            return b;
+          };
+          if (r.status !== '承認') acts.push(mk('承認する', 'approve', 'primary'));
+          if (r.status !== '見送り') acts.push(mk('見送る', 'decline', 'ghost-btn'));
+        }
+        const sub = [r.lineName ? 'LINE名：' + r.lineName : '', '申請 ' + r.at.slice(0, 16), r.notice === '送信済み' ? '📨 本人に通知済み' : r.notice === '送信待ち' ? '📨 通知を送信中…' : r.notice === 'エラー' ? '⚠️ 通知に失敗' : ''].filter(Boolean).join('　');
+        return stagger(el('div', { className: 'rcard' }, [
+          el('div', { className: 'rhead' }, [el('b', { textContent: r.nickname || '（名前なし）' }), el('span', { className: 'pill ' + (PILL[r.status] || 'no'), textContent: LABEL[r.status] || r.status })]),
+          el('div', { className: 'meta', textContent: sub }),
+          r.comment ? el('div', { className: 'rcomment', textContent: '💬 ' + r.comment }) : null,
+          acts.length ? el('div', { className: 'racts' }, acts) : null,
+        ]), i);
+      }) : [el('p', { className: 'empty', textContent: reserveFilter === 'wait' ? '承認待ちの予約はありません。' : '当てはまる予約はありません。' })]));
+    };
+    btns.forEach((b, i) => b.addEventListener('click', () => {
+      reserveFilter = R_FILTERS[i].key;
+      btns.forEach((x, j) => x.setAttribute('aria-pressed', String(i === j)));
+      draw();
+    }));
+    const notes = [el('p', { className: 'note', textContent: '参加者がLINEで「予約する→確定」を押すとここに届きます。承認すると、本人のLINEに「予約が確定しました」と自動で届きます。' })];
+    if (!data.organizerCount) notes.push(el('p', { className: 'note', style: 'color:var(--red)', textContent: '📲 予約が入ったときにLINEで知らせてほしい場合は「メンバー」タブで登録してください。' }));
+    $('view-reserve').replaceChildren(tiles, ...notes, el('div', { className: 'toolbar' }, [el('div', { className: 'toggle', role: 'group', 'aria-label': '表示する予約' }, btns)]), body);
+    draw();
+  }
+
+  function decide(r, decision, btn) {
+    const yes = decision === 'approve';
+    ask(yes ? r.nickname + ' さんの予約を承認しますか？' : r.nickname + ' さんの予約を見送りますか？',
+      yes ? '本人のLINEに「予約が確定しました」と日時・場所つきで届きます。' : '本人のLINEに、今回はご案内が難しい旨のメッセージが届きます。',
+      yes ? '承認する' : '見送る').then((ok) => {
+      if (!ok) return;
+      btn.disabled = true;
+      run().withSuccessHandler((list) => {
+        data.reservations = list;
+        renderReserve();
+        toast(yes ? '承認しました！本人に通知しています…' : '見送りにしました');
+        if (yes) confetti();
+        flush().then(() => run().withSuccessHandler((d) => { data = d; renderReserve(); }).getDashboard());
+      }).withFailureHandler((e) => { btn.disabled = false; toast(e.message, { err: true }); }).decideReservation(r.row, decision);
+    });
   }
 
   function bars(kinds, count) {

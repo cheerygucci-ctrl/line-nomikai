@@ -6,7 +6,6 @@
 <title>飲み会アンケート</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
-<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script src="nomy.js"></script>
 <style>
   :root {
@@ -114,6 +113,18 @@
   .age-row { display: flex; align-items: center; gap: 10px; }
   .age-row input { max-width: 140px; font-size: 26px; font-weight: 900; text-align: center; }
   .age-row .unit { font-size: 20px; font-weight: 900; }
+  .quick { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .quick button { border: 2px solid var(--beer-bottom); background: #FFF8E3; color: var(--ink); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .quick button:active { transform: scale(.95); }
+  .extra-item { margin-top: 14px; }
+  .extra-item .hint { display: block; margin: 0 0 6px; font-weight: 700; }
+  .choices.row { grid-template-columns: repeat(3, 1fr); }
+  .choices.two { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .choices.two label { padding: 10px 10px; font-size: 14px; gap: 6px; }
+  .choices.two label .em { font-size: 20px; }
+  .choices.row label { justify-content: center; padding: 10px 6px; }
+  .step.notgoing .going-only { display: none; }
+  .left { font-size: 12px; font-weight: 700; color: var(--ink-soft); }
   .sub-input { display: none; } .sub-input.show { display: block; animation: slide .3s ease; }
   .multi input[type=checkbox] { position: absolute; opacity: 0; pointer-events: none; }
   .multi input:checked + label { background: #fff; border-color: var(--beer-bottom); box-shadow: 0 4px 0 var(--beer-bottom); transform: translateY(-2px); }
@@ -162,6 +173,7 @@
   .loading { flex: 1; display: flex; align-items: center; justify-content: center; font-weight: 700; }
   .banner { display: none; background: #fff; border-left: 6px solid var(--lantern); border-radius: 12px; padding: 10px 12px; font-weight: 700; margin-bottom: 10px; font-size: 14px; }
   .banner.show { display: block; }
+  .banner-link { display: inline-block; margin-top: 8px; background: #06C755; color: #fff; border-radius: 999px; padding: 6px 16px; text-decoration: none; font-weight: 800; }
 
   @media (prefers-reduced-motion: reduce) {
     .bubbles, .confetti { display: none; }
@@ -195,7 +207,7 @@
       <p class="big" id="introTitle">ようこそ！</p>
       <p class="greet" id="greet">読み込み中…</p>
       <div class="rules"><b>参加ルール</b><p id="rulesTop"></p></div>
-      <p id="introText">アンケートは2〜3分で終わるよ。答えると、トーク画面にメニューが出てくるよ！</p>
+      <p id="introText">ほとんどタップで、<b>約1分</b>で終わるよ！答えると、ゲームやメニューが使えるようになるよ🎮</p>
       <div class="nav"><button type="button" class="btn" data-next id="startBtn">アンケートをはじめる</button></div>
     </section>
 
@@ -217,7 +229,7 @@
 
     <section class="step" data-step="job" data-say="どんなお仕事をしてるの？">
       <p class="q" id="jobQ">職業は？<span class="tag req">必須</span></p>
-      <div class="choices" role="radiogroup" aria-labelledby="jobQ">
+      <div class="choices two" role="radiogroup" aria-labelledby="jobQ">
         <input type="radio" id="j1" name="job" value="会社員"><label for="j1"><span class="em">🏢</span>会社員</label>
         <input type="radio" id="j2" name="job" value="経営者・役員"><label for="j2"><span class="em">👔</span>経営者・役員</label>
         <input type="radio" id="j3" name="job" value="個人事業主・フリーランス"><label for="j3"><span class="em">💻</span>個人事業主・フリーランス</label>
@@ -228,6 +240,9 @@
       </div>
       <label class="hint" for="jobDetail">業種・職種 <span class="tag req">必須</span></label>
       <input type="text" id="jobDetail" name="jobDetail" maxlength="60" placeholder="例：IT・Webエンジニア、美容・ネイリスト" enterkeyhint="next">
+      <div class="quick" data-target="jobDetail" aria-label="タップで入力">
+        <button type="button">営業</button><button type="button">IT・エンジニア</button><button type="button">事務</button><button type="button">販売・接客</button><button type="button">飲食</button><button type="button">美容</button><button type="button">医療・福祉</button><button type="button">クリエイティブ</button><button type="button">教育</button><button type="button">不動産・建設</button>
+      </div>
       <p class="err" data-err></p>
       <div class="nav"><button type="button" class="btn ghost" data-back>もどる</button><button type="button" class="btn" data-next>つぎへ</button></div>
     </section>
@@ -269,53 +284,47 @@
       <div class="nav"><button type="button" class="btn ghost" data-back>もどる</button><button type="button" class="btn" data-next>つぎへ</button></div>
     </section>
 
-    <section class="step" data-step="connect" data-say="お仕事で、どんな人とつながりたい？" data-face="sparkle">
-      <label class="q" for="connect">仕事でつながりたい人<span class="tag opt">任意</span></label>
-      <p class="hint">業界・職種・立場など、なんでもOK！</p>
-      <textarea id="connect" name="connect" maxlength="300" placeholder="例：IT系の経営者、Webデザイナー、独立している人"></textarea>
-      <div class="count" data-for="connect"></div>
-      <div class="nav"><button type="button" class="btn ghost" data-back>もどる</button><button type="button" class="btn" data-next>つぎへ</button></div>
-    </section>
-
-    <section class="step" data-step="drink" data-say="お酒は飲む派？">
-      <p class="q" id="drinkQ">お酒は飲みますか？<span class="tag opt">任意</span></p>
-      <div class="choices" role="radiogroup" aria-labelledby="drinkQ">
-        <input type="radio" id="d1" name="drink" value="飲む"><label for="d1"><span class="em">🍺</span>飲む！</label>
-        <input type="radio" id="d2" name="drink" value="少し"><label for="d2"><span class="em">🥂</span>少しだけ</label>
-        <input type="radio" id="d3" name="drink" value="飲まない"><label for="d3"><span class="em">🧃</span>飲まない</label>
-      </div>
-      <div class="nav"><button type="button" class="btn ghost" data-back>もどる</button><button type="button" class="btn" data-next>つぎへ</button></div>
-    </section>
-
-    <section class="step" data-step="ng" data-say="苦手な食べ物やアレルギー、ある？">
-      <label class="q" for="ng">食べられないもの・アレルギー<span class="tag opt">任意</span></label>
-      <p class="hint">なければ空のままでOK！お店に伝えるね。</p>
-      <input type="text" id="ng" name="ng" maxlength="200" placeholder="例：えび、生もの" enterkeyhint="next">
-      <div class="nav"><button type="button" class="btn ghost" data-back>もどる</button><button type="button" class="btn" data-next>つぎへ</button></div>
-    </section>
-
     <section class="step" data-step="dream" data-say="ねえねえ、将来の夢ってある？✨" data-face="sparkle">
       <label class="q" for="dream">将来の夢・やりたいこと<span class="tag req">必須</span></label>
       <p class="hint">大きな夢でも、小さなやりたいことでも！</p>
       <textarea id="dream" name="dream" maxlength="1000" placeholder="例：いつか自分のカフェを開きたい"></textarea>
+      <p class="hint" style="margin-top:8px">思いつかなければ、タップで選んでもOK👇</p>
+      <div class="quick" data-target="dream" aria-label="タップで入力">
+        <button type="button">独立・起業したい</button><button type="button">自分のお店を持ちたい</button><button type="button">海外で暮らしたい・働きたい</button><button type="button">好きなことを仕事にしたい</button><button type="button">年収を上げたい</button><button type="button">家族と楽しく暮らしたい</button><button type="button">いろんな人とつながりたい</button><button type="button">まだ探し中！</button>
+      </div>
       <div class="count" data-for="dream"></div>
       <p class="err" data-err></p>
       <div class="nav"><button type="button" class="btn ghost" data-back>もどる</button><button type="button" class="btn" data-next>つぎへ</button></div>
     </section>
 
-    <section class="step" data-step="goal" data-say="いまの目標も聞かせて！応援するよ" data-face="sparkle">
-      <label class="q" for="goal">目標<span class="tag opt">任意</span></label>
-      <p class="hint">今年や今月の目標など</p>
-      <textarea id="goal" name="goal" maxlength="1000" placeholder="例：今年中にフルマラソン完走"></textarea>
-      <div class="count" data-for="goal"></div>
-      <div class="nav"><button type="button" class="btn ghost" data-back>もどる</button><button type="button" class="btn" data-next>つぎへ</button></div>
-    </section>
-
-    <section class="step" data-step="comment" data-say="さいごに、ひとことどうぞ！" data-face="wink">
-      <label class="q" for="comment">ひとこと<span class="tag opt">任意</span></label>
-      <textarea id="comment" name="comment" maxlength="500" placeholder="意気込みや質問などあればどうぞ"></textarea>
-      <div class="count" data-for="comment"></div>
-      <div class="nav"><button type="button" class="btn ghost" data-back>もどる</button><button type="button" class="btn" data-next>つぎへ</button></div>
+    <section class="step" data-step="extra" data-say="ここからは全部スキップOK！書きたいところだけどうぞ" data-face="wink">
+      <p class="q">もっと教えて！<span class="tag opt">ぜんぶ任意</span></p>
+      <p class="hint">書かなくても大丈夫。そのまま「スキップ」でOK！</p>
+      <div class="extra-item">
+        <label class="hint" for="connect">🤝 仕事でつながりたい人</label>
+        <input type="text" id="connect" name="connect" maxlength="300" placeholder="例：IT系の経営者、Webデザイナー" enterkeyhint="next">
+      </div>
+      <div class="extra-item going-only">
+        <p class="hint" id="drinkQ">🍺 お酒は飲む？</p>
+        <div class="choices row" role="radiogroup" aria-labelledby="drinkQ">
+          <input type="radio" id="d1" name="drink" value="飲む"><label for="d1">飲む！</label>
+          <input type="radio" id="d2" name="drink" value="少し"><label for="d2">少し</label>
+          <input type="radio" id="d3" name="drink" value="飲まない"><label for="d3">飲まない</label>
+        </div>
+      </div>
+      <div class="extra-item going-only">
+        <label class="hint" for="ng">🚫 食べられないもの・アレルギー</label>
+        <input type="text" id="ng" name="ng" maxlength="200" placeholder="例：えび、生もの" enterkeyhint="next">
+      </div>
+      <div class="extra-item">
+        <label class="hint" for="goal">🎯 いまの目標</label>
+        <input type="text" id="goal" name="goal" maxlength="1000" placeholder="例：今年中にフルマラソン完走" enterkeyhint="next">
+      </div>
+      <div class="extra-item">
+        <label class="hint" for="comment">💬 ひとこと</label>
+        <input type="text" id="comment" name="comment" maxlength="500" placeholder="意気込みや質問などあればどうぞ" enterkeyhint="done">
+      </div>
+      <div class="nav"><button type="button" class="btn ghost" data-back>もどる</button><button type="button" class="btn" data-next id="extraNext">スキップ</button></div>
     </section>
 
     <section class="step" data-step="agree" data-say="さいごに、ルールの確認だよ！" data-face="normal">
@@ -336,9 +345,10 @@
   </div>
   <div class="kanpai" aria-hidden="true">カンパーイ！</div>
   <h2 id="doneTitle">回答ありがとうございます！</h2>
-  <p>トークにもどると、メニューが出てるよ🍻</p>
-  <button type="button" class="btn" id="close">トークにもどる</button>
-  <a class="btn game-btn" href="game.html">🎮 ミニゲームで遊ぶ</a>
+  <p>参加するなら、このまま予約しておくと安心だよ🍻</p>
+  <a class="btn" id="toReserve" href="reserve.html">🎫 このまま予約する</a>
+  <a class="btn game-btn" href="game.html">🎮 ゲームセンターで遊ぶ</a>
+  <button type="button" class="btn game-btn" id="close">トークにもどる</button>
   <a class="sub" href="event.html">イベントの詳細を見る</a>
   <div class="confetti" id="confetti" aria-hidden="true"></div>
 </div>
@@ -389,7 +399,9 @@ function say(text, face, move) {
 function visibleSteps() {
   // 不参加ならお酒・食べ物の質問は飛ばす
   const notGoing = form.elements.attend.value === '不参加';
-  return steps.filter((s) => !(notGoing && (s.dataset.step === 'drink' || s.dataset.step === 'ng')));
+  const ex = steps.find((s) => s.dataset.step === 'extra');
+  if (ex) ex.classList.toggle('notgoing', notGoing);
+  return steps;
 }
 
 function go(i, dir) {
@@ -403,11 +415,14 @@ function go(i, dir) {
   const total = vis.length - 1;
   $('progress').hidden = i === 0;
   $('pfill').style.width = (i / total * 100) + '%';
-  $('ptext').textContent = i === total ? 'さいご！' : `${i} / ${total}`;
+  const remain = total - i;
+  $('ptext').textContent = i === total ? 'さいご！' : `あと${remain}問`;
+  if (s.dataset.step === 'extra') updateExtraBtn();
   if (s.dataset.say) say(s.dataset.say, s.dataset.face || 'normal');
   const first = s.querySelector('input[type=text], textarea');
   if (first && i > 0) setTimeout(() => first.focus({ preventScroll: true }), 50);
   window.scrollTo({ top: 0, behavior: REDUCED ? 'auto' : 'smooth' });
+  if (i > 0 && typeof autosave === 'function') autosave();
 }
 
 function current() { return visibleSteps()[cur]; }
@@ -471,8 +486,52 @@ form.addEventListener('change', (e) => {
   if (err) err.textContent = '';
 });
 
+// ---------- 答えやすくする工夫 ----------
+const AUTO_KEY = 'nomikai-autosave';
+const EXTRA = ['connect', 'drink', 'ng', 'goal', 'comment'];
+function updateExtraBtn() {
+  const b = $('extraNext');
+  if (b) b.textContent = EXTRA.some((k) => String(form.elements[k].value || '').trim()) ? 'つぎへ' : 'スキップ';
+}
+function autosave() {
+  if (PREVIEW) return;
+  try { localStorage.setItem(AUTO_KEY, JSON.stringify({ at: Date.now(), step: visibleSteps()[cur].dataset.step, v: getValues() })); } catch (e) { /* noop */ }
+}
+function takeAutosave() {
+  try {
+    const d = JSON.parse(localStorage.getItem(AUTO_KEY) || 'null');
+    return d && Date.now() - d.at < 7 * 24 * 3600 * 1000 && d.v && d.v.nickname ? d : null;
+  } catch (e) { return null; }
+}
+// タップで入力できる候補
+form.addEventListener('click', (e) => {
+  const b = e.target.closest('.quick button');
+  if (!b) return;
+  const t = $(b.closest('.quick').dataset.target);
+  const v = b.textContent;
+  if (t.id === 'dream' && t.value.trim() && !t.value.includes(v)) t.value = t.value.trim() + '、' + v;
+  else t.value = v;
+  t.dispatchEvent(new Event('input', { bubbles: true }));
+  const err = b.closest('.step').querySelector('[data-err]'); if (err) err.textContent = '';
+  say('いいね！', 'happy', 'jump');
+});
+// 1つ選ぶだけの質問は、選んだら自動で次へ
+const AUTO_NEXT = { attend: () => true, referral: (v) => v !== '知り合いの紹介' };
+form.addEventListener('change', (e) => {
+  const f = AUTO_NEXT[e.target.name];
+  if (f && f(e.target.value)) {
+    const stepNow = cur;
+    setTimeout(() => { if (cur === stepNow && check(current())) go(cur + 1, 1); }, 450);
+  }
+  if (e.target.name === 'job') setTimeout(() => { if (!$('jobDetail').value) $('jobDetail').focus({ preventScroll: true }); }, 200);
+  if (EXTRA.includes(e.target.name)) updateExtraBtn();
+  autosave();
+});
+
 form.addEventListener('input', (e) => {
   updateCounts();
+  if (EXTRA.includes(e.target.name)) updateExtraBtn();
+  clearTimeout(autosave.t); autosave.t = setTimeout(autosave, 400);
   if (e.target.name === 'nickname' && e.target.value.trim().length === 1) say('いい名前！', 'happy');
 });
 
@@ -524,12 +583,57 @@ async function api(body) {
     await new Promise((r) => setTimeout(r, 500));
     return body.type === 'load' ? { ok: true, answer: params.has('again') ? { nickname: 'ありす', attend: '参加', drink: '少し', ng: '', dream: '', goal: '', comment: '', adult: 'はい', referral: '知り合いの紹介', referrer: 'たろう', purpose: ['交流したい'], agree: true, connect: '', job: '会社員', jobDetail: '営業', age: '28', dream: '世界一周' } : null } : { ok: true };
   }
-  const res = await fetch(GAS_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // CORSの事前確認を避ける
-    body: JSON.stringify({ ...body, idToken: liff.getIDToken() }),
-  });
-  return res.json();
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 20000);
+  try {
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // CORSの事前確認を避ける
+      body: JSON.stringify({ ...body, idToken: liff.getIDToken() }),
+      signal: ctl.signal,
+    });
+    return await res.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// ---------- LINE とのつながり（画面表示とは別に、裏で進める） ----------
+const DRAFT_KEY = 'nomikai-draft';
+const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
+let liffState = PREVIEW ? 'ok' : 'pending'; // ok / login（LINE外で未ログイン）/ error
+const liffReady = PREVIEW ? Promise.resolve('ok') : (async () => {
+  try {
+    if (!window.liff) {
+      // LINE の部品は画面を止めないよう、あとから読み込む
+      await withTimeout(new Promise((res, rej) => {
+        const sc = document.createElement('script');
+        sc.src = 'https://static.line-scdn.net/liff/edge/2/sdk.js'; sc.charset = 'utf-8';
+        sc.onload = res; sc.onerror = rej;
+        document.head.appendChild(sc);
+      }), 15000);
+    }
+    await withTimeout(liff.init({ liffId: LIFF_ID }), 15000);
+  } catch (e) { return (liffState = 'error'); }
+  return (liffState = liff.isLoggedIn() ? 'ok' : 'login');
+})();
+
+function saveDraft() {
+  try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ at: Date.now(), v: getValues() })); } catch (e) { /* noop */ }
+}
+function takeDraft() {
+  try {
+    const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null');
+    localStorage.removeItem(DRAFT_KEY);
+    return d && Date.now() - d.at < 60 * 60 * 1000 ? d.v : null;
+  } catch (e) { return null; }
+}
+const OPEN_IN_LINE = 'https://liff.line.me/' + LIFF_ID;
+function lineHelp(msg) {
+  banner(msg);
+  const a = document.createElement('a');
+  a.href = OPEN_IN_LINE; a.textContent = 'LINEアプリで開く'; a.className = 'banner-link';
+  $('banner').append(document.createElement('br'), a);
 }
 
 form.addEventListener('submit', async (e) => {
@@ -546,15 +650,30 @@ form.addEventListener('submit', async (e) => {
   btn.disabled = true; btn.textContent = '送信中…';
   say('とどけ〜！', 'wow');
   try {
+    if (liffState === 'pending') { btn.textContent = 'LINEと接続中…'; await liffReady; btn.textContent = '送信中…'; }
+    if (liffState === 'login') {
+      // LINEアプリの外で開いている：入力内容を取っておいて、LINEログインしてから戻ってくる
+      saveDraft();
+      say('LINEでログインしてから送るね！', 'happy');
+      liff.login({ redirectUri: location.href.split('#')[0] });
+      return;
+    }
+    if (liffState === 'error') {
+      saveDraft();
+      lineHelp('LINEとうまくつながらなかったよ。下のボタンからLINEアプリで開き直してね（入力した内容は残るよ）。');
+      say('あれれ…', 'sad', 'droop');
+      return;
+    }
     const res = await api({ type: 'answer', answer: v });
     if (res.ok) return celebrate();
     if (res.error === 'auth') {
-      banner('ログインの期限が切れたみたい。いったん画面を閉じて、もう一度開いてね。（入力した内容は消えないように、送信ボタンをもう一度押してもOK）');
-      try { if (!liff.isInClient()) { liff.logout(); liff.login({ redirectUri: location.href }); return; } } catch (e) { /* noop */ }
+      saveDraft();
+      try { if (!liff.isInClient()) { liff.logout(); liff.login({ redirectUri: location.href.split('#')[0] }); return; } } catch (e) { /* noop */ }
+      lineHelp('LINEのログインが切れたみたい。画面を閉じて開き直してね（入力した内容は残るよ）。');
     } else if (res.error === 'invalid') {
       // どの質問に問題があるかを探して、その質問にもどる
       const STEP_OF = { nickname: 'nickname', age: 'adult', adult: 'adult', job: 'job', jobDetail: 'job', referral: 'referral', referrer: 'referral',
-        attend: 'attend', purpose: 'purpose', connect: 'connect', drink: 'drink', ng: 'ng', dream: 'dream', goal: 'goal', comment: 'comment', agree: 'agree' };
+        attend: 'attend', purpose: 'purpose', connect: 'extra', drink: 'extra', ng: 'extra', dream: 'dream', goal: 'extra', comment: 'extra', agree: 'agree' };
       const LABEL = { nickname: 'お名前', age: '年齢', adult: '年齢', job: '職業', jobDetail: '業種・職種', referral: '知ったきっかけ', referrer: '紹介者', attend: '参加・不参加',
         purpose: '参加の目的', connect: '仕事でつながりたい人', drink: 'お酒', ng: '食べられないもの', dream: '将来の夢', goal: '目標', comment: 'ひとこと', agree: 'ルールへの同意' };
       const fields = (res.fields || []).filter((f) => STEP_OF[f]);
@@ -565,7 +684,8 @@ form.addEventListener('submit', async (e) => {
     else banner('回答は保存できたけど、メニューを出せなかったよ。主催者に連絡してね。（' + (res.error || '不明') + '）');
     say('あれれ…', 'sad', 'droop');
   } catch (err) {
-    banner('通信に失敗したよ。電波のいいところで、もう一度送信してね。');
+    saveDraft();
+    banner('通信に時間がかかっているみたい。電波のいいところで、もう一度「送信」を押してね（入力した内容は残っているよ）。');
     say('電波が…', 'sad', 'droop');
   } finally {
     btn.disabled = false; btn.textContent = label;
@@ -573,6 +693,7 @@ form.addEventListener('submit', async (e) => {
 });
 
 function celebrate() {
+  try { localStorage.removeItem(DRAFT_KEY); localStorage.removeItem(AUTO_KEY); } catch (e) { /* noop */ }
   $('m1').innerHTML = Nomy.svg({ id: 'c1', face: 'happy' });
   $('m2').innerHTML = Nomy.svg({ id: 'c2', face: 'happy', dark: true });
   const sp = $('splash');
@@ -595,11 +716,11 @@ function celebrate() {
     }
   }
   $('done').classList.add('show');
-  $('close').focus();
+  $('toReserve').focus();
 }
 
 $('close').addEventListener('click', () => {
-  if (!PREVIEW && liff.isInClient()) liff.closeWindow();
+  if (!PREVIEW && window.liff && liffState === 'ok' && liff.isInClient()) liff.closeWindow();
   else $('done').classList.remove('show');
 });
 
@@ -610,42 +731,76 @@ function fatal(msg) {
 
 async function loadEvent() {
   try {
-    const d = PREVIEW ? { ok: true, event: SAMPLE_EVENT } : await (await fetch(GAS_URL + '?type=event')).json();
+    const d = PREVIEW ? { ok: true, event: SAMPLE_EVENT } : await withTimeout(fetch(GAS_URL + '?type=event').then((r) => r.json()), 12000);
     if (d.ok) return d.event;
   } catch (e) { /* 読めなくても続ける */ }
-  return SAMPLE_EVENT;
+  return null;
+}
+
+function showGreeting(ev) {
+  $('greet').textContent = (ev && ev.greeting) || SAMPLE_EVENT.greeting;
+  const rules = (ev && ev.rules) || SAMPLE_EVENT.rules;
+  $('rulesTop').textContent = rules;
+  $('rulesBottom').textContent = rules;
+}
+
+function markReturning(nickname) {
+  returning = true;
+  $('introTitle').textContent = 'おかえり！';
+  $('introText').textContent = 'まえの回答が入ってるよ。直したいところだけ変えてね。';
+  $('startBtn').textContent = '回答を直す';
+  $('submit').textContent = '更新してカンパイ！';
+  if (cur === 0) say(`おかえり、${nickname}さん！`, 'happy', 'jump');
 }
 
 async function main() {
   updateCounts();
-  say('やあ！ノミィだよ🍺', 'happy', 'jump');
-  const evP = loadEvent();
-  if (!PREVIEW) {
-    try { await liff.init({ liffId: LIFF_ID }); } catch (e) { return fatal('LINEアプリから、もう一度開いてね。'); }
-    if (!liff.isLoggedIn()) { liff.login({ redirectUri: location.href }); return; }
+  // 1) 待たずにすぐ画面を出す（あいさつ文は届きしだい差しかえ）
+  showGreeting(null);
+  $('loading').remove();
+  go(0, 1);
+  say('やあ！ノミィだよ🍺 まずはごあいさつを読んでね！', 'happy', 'jump');
+  loadEvent().then((ev) => { if (ev) showGreeting(ev); });
+
+  // 2) LINEログインから戻ってきたときは、入力していた内容を戻す
+  const draft = takeDraft();
+  if (draft) {
+    setValues(draft);
+    const last = visibleSteps().length - 1;
+    go(last, 1);
+    say('おかえり！あとは送信を押すだけだよ✨', 'happy', 'jump');
   }
+
+  // 途中まで書いていた内容があれば、続きから
+  const auto = !draft && takeAutosave();
+  if (auto) {
+    setValues(auto.v);
+    const idx = Math.max(0, visibleSteps().findIndex((s) => s.dataset.step === auto.step));
+    $('introText').textContent = '前回の続きから再開できるよ！';
+    $('startBtn').textContent = '続きから答える';
+    $('startBtn').onclick = (ev) => { ev.stopPropagation(); go(idx, 1); };
+  }
+
+  // 3) 裏でLINEとつなぎ、前の回答があれば入れておく
+  const state = await liffReady;
+  // LINEの名前を、ニックネームの最初の値として入れておく（変えてもOK）
+  if (state === 'ok' && !PREVIEW && !form.elements.nickname.value) {
+    try { const t = liff.getDecodedIDToken(); if (t && t.name) form.elements.nickname.value = String(t.name).slice(0, 30); } catch (e) { /* noop */ }
+  }
+  if (state === 'login' && !draft) {
+    $('introText').textContent = 'このまま答えてOK！（約1分）送信のときにLINEでログインしてね。LINEアプリから開くとログインなしで送れるよ。';
+  }
+  if (state === 'error' && !draft) {
+    lineHelp('LINEとつながらなかったよ。答えはじめる前に、LINEアプリで開き直すのがおすすめ。');
+  }
+  if (state !== 'ok' || draft) return;
   try {
     const res = await api({ type: 'load' });
-    if (res.ok && res.answer) {
+    if (res.ok && res.answer && cur === 0 && !auto) {
       setValues(res.answer);
-      returning = true;
-    } else if (!res.ok && res.error === 'auth' && !PREVIEW) {
-      liff.logout(); liff.login({ redirectUri: location.href }); return;
+      markReturning(res.answer.nickname || '');
     }
   } catch (e) { /* 読み込めなくても新しく答えられる */ }
-  const ev = await evP;
-  $('greet').textContent = ev.greeting;
-  $('rulesTop').textContent = ev.rules;
-  $('rulesBottom').textContent = ev.rules;
-  $('loading').remove();
-  if (returning) {
-    $('introTitle').textContent = 'おかえり！';
-    $('introText').textContent = 'まえの回答が入ってるよ。直したいところだけ変えてね。';
-    $('startBtn').textContent = '回答を直す';
-    $('submit').textContent = '更新してカンパイ！';
-  }
-  go(0, 1);
-  say(returning ? `おかえり、${form.elements.nickname.value}さん！` : 'やあ！ノミィだよ🍺 まずはごあいさつを読んでね！', 'happy', 'jump');
 }
 main();
 </script>
