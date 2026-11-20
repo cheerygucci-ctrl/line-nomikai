@@ -214,7 +214,8 @@
     const g = data.game || { catch: [], kanpai: [], teams: [] };
     const medal = ['🥇', '🥈', '🥉'];
     const list = (arr) => (arr.length ? arr.map((r, i) => medal[i] + ' ' + r.nickname + '　' + r.best + '点').join('\n') : 'まだ記録なし！今なら1位のチャンス✨');
-    const lines = ['🏆 ノミィのゲームセンター 途中経過！', '', '🫧 泡キャッチ', list(g.catch), '', '🍻 ジャスト乾杯', list(g.kanpai)];
+    const lines = ['🏆 ノミィのゲームセンター 途中経過！'];
+    (g.games || [{ em: '🫧', name: '泡キャッチ', top: g.catch }, { em: '🍻', name: 'ジャスト乾杯', top: g.kanpai }]).forEach((x) => lines.push('', x.em + ' ' + x.name, list(x.top)));
     if (g.teams && g.teams.length) {
       lines.push('', '🏁 チーム対抗戦（優勝チームは当日の乾杯の音頭！）');
       g.teams.forEach((t, i) => lines.push((i + 1) + '位 ' + t.em + t.name + '　' + t.score + '点'));
@@ -279,7 +280,7 @@
     const remind = el('button', { type: 'button', className: 'chip-btn', textContent: '🔔 当日リマインド' });
     remind.addEventListener('click', () => { text.value = remindTemplate(); upd(); text.focus(); });
     const game = el('button', { type: 'button', className: 'chip-btn', textContent: '🎮 ゲームのお誘い' });
-    game.addEventListener('click', () => { text.value = '🎮 開催までの待ち時間に「ノミィのゲームセンター」で遊ぼう！\n🫧泡キャッチ・🍻ジャスト乾杯・🔮毎日おみくじ・🏁チーム対抗戦\n\nhttps://liff.line.me/2012697224-lfwPcqYm/game.html'; upd(); text.focus(); });
+    game.addEventListener('click', () => { text.value = '🎮 開催までの待ち時間に「ノミィのゲームセンター」で遊ぼう！\n🫧泡キャッチ・🍻ジャスト乾杯・🃏神経衰弱・🔨モグラたたき・🧠クイズ・👆連打・🔮おみくじ・🏁チーム対抗戦\n\nhttps://liff.line.me/2012697224-lfwPcqYm/game.html'; upd(); text.focus(); });
     const rank = el('button', { type: 'button', className: 'chip-btn', textContent: '🏆 ランキング' });
     rank.addEventListener('click', () => { text.value = rankingTemplate(); upd(); text.focus(); });
 

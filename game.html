@@ -168,11 +168,75 @@
   .confetti i { position: absolute; top: -20px; left: var(--x); width: 9px; height: 14px; background: var(--c); border-radius: 2px; animation: fall var(--d) linear var(--delay) forwards; }
   @keyframes fall { to { transform: translate(var(--drift), 110vh) rotate(var(--r)); } }
   .err { color: #FFB4A0; font-weight: 700; margin-top: 10px; }
+  /* 音のON/OFF */
+  .snd { position: fixed; top: calc(8px + env(safe-area-inset-top)); right: 10px; z-index: 20; border: 0; background: rgba(255,255,255,.15); color: #fff; width: 42px; height: 42px; border-radius: 50%; font-size: 20px; cursor: pointer; backdrop-filter: blur(4px); }
+  body.playing .snd { top: auto; bottom: calc(10px + env(safe-area-inset-bottom)); right: 10px; }
+  .gcard.pick::after { content: "今日のおすすめ"; position: absolute; left: 50%; bottom: -10px; transform: translateX(-50%); white-space: nowrap; background: #fff; color: var(--lantern); font-size: 11px; font-weight: 900; border-radius: 999px; padding: 1px 9px; box-shadow: 0 2px 0 rgba(0,0,0,.15); }
+  .gcard.c3 { background: linear-gradient(160deg, #D9F2E3, #7FCFA3); box-shadow: 0 5px 0 #3E9567; }
+  .gcard.c4 { background: linear-gradient(160deg, #FCE2F0, #F09AC4); box-shadow: 0 5px 0 #B9558A; }
+  .gcard.c5 { background: linear-gradient(160deg, #E4E6FF, #A3A9F5); box-shadow: 0 5px 0 #5E64B8; }
+  .gcard.c6 { background: linear-gradient(160deg, #FFF3B8, #F2D24B); box-shadow: 0 5px 0 #B39516; }
+  .tabs { flex-wrap: wrap; border-radius: 16px; }
+  .tabs button { flex: 1 0 30%; white-space: nowrap; font-size: 12px; }
+
+  /* 共通のゲーム画面 */
+  .g-head { width: 100%; max-width: 420px; display: flex; justify-content: space-between; align-items: center; font-weight: 900; margin-bottom: 8px; }
+  .g-head .score { font-size: 28px; color: var(--beer); font-variant-numeric: tabular-nums; }
+  .g-head .time { background: rgba(255,255,255,.12); border-radius: 999px; padding: 2px 12px; font-variant-numeric: tabular-nums; }
+  .g-bar { width: 100%; max-width: 420px; height: 6px; background: rgba(255,255,255,.12); border-radius: 3px; overflow: hidden; margin-bottom: 12px; }
+  .g-bar i { display: block; height: 100%; width: 100%; background: var(--beer); transform-origin: left; }
+  .g-say { min-height: 1.5em; font-weight: 900; color: #FFE7A3; margin: 0 0 10px; }
+
+  /* 神経衰弱 */
+  #memory, #mole, #quiz, #tap { justify-content: flex-start; padding-top: calc(54px + env(safe-area-inset-top)); }
+  .mgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%; max-width: 380px; }
+  .mcard { aspect-ratio: 3 / 4; perspective: 600px; border: 0; background: transparent; padding: 0; cursor: pointer; }
+  .mcard .in { position: relative; width: 100%; height: 100%; transition: transform .35s; transform-style: preserve-3d; }
+  .mcard.open .in, .mcard.done .in { transform: rotateY(180deg); }
+  .mcard .f, .mcard .b { position: absolute; inset: 0; border-radius: 12px; display: grid; place-items: center; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+  .mcard .f { background: linear-gradient(160deg, var(--beer), #E8A21E); font-size: 22px; box-shadow: inset 0 -4px 0 rgba(0,0,0,.15); }
+  .mcard .b { background: var(--paper); transform: rotateY(180deg); font-size: 34px; }
+  .mcard.done .b { background: #DDF5E6; animation: pop .4s ease; }
+  .mcard.miss .in { animation: shakeX .35s; }
+  @keyframes shakeX { 25% { transform: rotateY(180deg) translateX(-5px); } 75% { transform: rotateY(180deg) translateX(5px); } }
+
+  /* モグラたたき */
+  .holes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 100%; max-width: 360px; margin-top: 8px; }
+  .hole { position: relative; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(ellipse at 50% 70%, #10172A 40%, #2B3A5C 72%); overflow: hidden; border: 0; padding: 0; cursor: pointer; }
+  .hole .it { position: absolute; left: 0; right: 0; bottom: -70%; font-size: 52px; line-height: 1; text-align: center; transition: bottom .12s ease-out; pointer-events: none; }
+  .hole.up .it { bottom: 18%; }
+  .hole.hit .it { transform: scale(.6) rotate(20deg); opacity: .4; transition: transform .15s, opacity .15s, bottom .12s; }
+  .hole .pt { position: absolute; top: 4px; left: 0; right: 0; text-align: center; font-weight: 900; font-size: 20px; color: var(--beer); opacity: 0; pointer-events: none; }
+  .hole .pt.go { animation: floatUp .7s ease forwards; }
+  @keyframes floatUp { from { opacity: 1; transform: translateY(10px); } to { opacity: 0; transform: translateY(-20px); } }
+
+  /* クイズ */
+  .qbox { width: 100%; max-width: 420px; background: var(--paper); color: var(--ink); border-radius: 22px; padding: 18px 16px; text-align: left; }
+  .qbox .qn { font-size: 13px; color: #8A7B6E; font-weight: 900; }
+  .qbox .qt { font-size: 19px; font-weight: 900; margin: 4px 0 14px; line-height: 1.5; }
+  .qopts { display: grid; gap: 8px; }
+  .qopts button { border: 2px solid #EBDDBC; background: #fff; border-radius: 14px; padding: 12px; font: inherit; font-weight: 900; font-size: 16px; text-align: left; cursor: pointer; color: var(--ink); }
+  .qopts button.ok { background: #DDF5E6; border-color: var(--ok); }
+  .qopts button.ng { background: #FFE1D6; border-color: var(--lantern); }
+  .qopts button:disabled { cursor: default; }
+  .qfb { min-height: 1.6em; font-weight: 900; margin-top: 10px; text-align: center; }
+
+  /* 連打 */
+  .tapbtn { margin-top: 10px; width: min(260px, 70vw); aspect-ratio: 1; border-radius: 50%; border: 0; background: radial-gradient(circle at 40% 35%, #FFE7A3, var(--beer) 60%, #D98E12); box-shadow: 0 10px 0 #9A6A0B, 0 0 40px rgba(246,185,59,.4); cursor: pointer; display: grid; place-items: center; touch-action: manipulation; -webkit-user-select: none; }
+  .tapbtn:active { transform: translateY(6px) scale(.97); box-shadow: 0 4px 0 #9A6A0B; }
+  .tapbtn .nomy { width: 62% !important; pointer-events: none; }
+  .tapbtn.big { animation: tapPop .18s ease; }
+  @keyframes tapPop { 50% { transform: scale(1.06); } }
+  .tapfx { position: fixed; pointer-events: none; font-weight: 900; font-size: 22px; color: #FFE7A3; animation: floatUp .6s ease forwards; z-index: 6; }
+  .tapmeter { width: 100%; max-width: 360px; height: 16px; border-radius: 8px; background: rgba(255,255,255,.12); overflow: hidden; margin-top: 18px; }
+  .tapmeter i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--beer), var(--lantern)); transition: width .1s; }
+
   @media (prefers-reduced-motion: reduce) { .lanterns span, .start-pulse, .newbest, .hud .time.hurry, .gcard, .glass .beer::after { animation: none; } .bar .fill { transition: none; } }
 </style>
 </head>
 <body>
 <div class="lanterns" aria-hidden="true"><span></span><span></span><span></span></div>
+<button class="snd" id="snd" type="button" aria-label="音のオン・オフ">🔊</button>
 
 <section class="screen on" id="loading"><div class="hero-nomy" id="loadNomy"></div><p>読み込み中…</p></section>
 
@@ -187,16 +251,13 @@
   <h1 class="title">ノミィのゲームセンター<small id="evName"></small></h1>
   <div class="countdown" id="countdown"></div>
 
-  <div class="games">
-    <button class="gcard" id="goCatch" type="button"><span class="em" aria-hidden="true">🫧</span><b>泡キャッチ</b><small id="catchMe">ベスト 0点</small></button>
-    <button class="gcard k" id="goKanpai" type="button"><span class="new">NEW</span><span class="em" aria-hidden="true">🍻</span><b>ジャスト乾杯</b><small id="kanpaiMe">ベスト 0点</small></button>
-  </div>
+  <div class="games" id="gameList"></div>
 
   <div class="card">
     <h2>🏁 チーム対抗戦</h2>
     <p class="myteam" id="myTeam"></p>
     <div class="bars" id="teamBars"></div>
-    <p class="note">チームの点数は、メンバー全員の「泡キャッチ」と「ジャスト乾杯」のベストの合計。<b>優勝チームは当日、最初の乾杯の音頭をとれる！</b>会場では同じチームの人を探して乾杯しよう🍻</p>
+    <p class="note">チームの点数は、メンバー全員の<b>全6ゲームのベスト</b>の合計。いろんなゲームで記録を出すほどチームが強くなる！<b>優勝チームは当日、最初の乾杯の音頭をとれる！</b>会場では同じチームの人を探して乾杯しよう🍻</p>
   </div>
 
   <div class="card omikuji">
@@ -213,10 +274,7 @@
 
   <div class="card">
     <h2>🏆 ランキング</h2>
-    <div class="tabs" role="tablist" id="rankTabs">
-      <button type="button" role="tab" data-k="catch" aria-selected="true">🫧 泡キャッチ</button>
-      <button type="button" role="tab" data-k="kanpai" aria-selected="false">🍻 乾杯</button>
-    </div>
+    <div class="tabs" role="tablist" id="rankTabs"></div>
     <ol class="rank" id="rankList"></ol>
   </div>
   <a class="btn ghost" href="event.html" style="text-decoration:none">イベントの詳細を見る</a>
@@ -245,6 +303,32 @@
   <button class="btn k-btn" id="kBtn" type="button">注ぐ！</button>
 </section>
 
+<section class="screen" id="memory">
+  <div class="g-head"><span>🃏 ミス <b id="mMiss">0</b></span><span class="time" id="mTime">0.0秒</span></div>
+  <p class="g-say" id="mSay">同じおつまみを2枚そろえてね！</p>
+  <div class="mgrid" id="mgrid"></div>
+</section>
+
+<section class="screen" id="mole">
+  <div class="g-head"><span class="score" id="moScore">0</span><span class="time" id="moTime">30</span></div>
+  <div class="g-bar"><i id="moBar"></i></div>
+  <p class="g-say" id="moSay">🫛+1　🍗+3　🌟+5　🌶️は−3！</p>
+  <div class="holes" id="holes"></div>
+</section>
+
+<section class="screen" id="quiz">
+  <div class="g-head"><span>🧠 <b id="qNo">1</b> / 10</span><span class="score" id="qScore">0</span></div>
+  <div class="g-bar"><i id="qBar"></i></div>
+  <div class="qbox"><div class="qn" id="qCat"></div><div class="qt" id="qText"></div><div class="qopts" id="qOpts"></div><div class="qfb" id="qFb"></div></div>
+</section>
+
+<section class="screen" id="tap">
+  <div class="g-head"><span class="score" id="tScore">0</span><span class="time" id="tTime">10.0</span></div>
+  <p class="g-say" id="tSay">ノミィを連打してカンパイ！10秒で何回？</p>
+  <button class="tapbtn" id="tapBtn" type="button" aria-label="タップ"></button>
+  <div class="tapmeter"><i id="tMeter"></i></div>
+</section>
+
 <section class="screen scroll" id="result">
   <div class="hero-nomy" id="resNomy"></div>
   <p style="margin:0;font-weight:700;color:var(--sub)" id="resGame">今回のスコア</p>
@@ -261,8 +345,7 @@
   <div class="hero-nomy" id="closedNomy"></div>
   <h1 class="title">ゲームは終了！<small>たくさん遊んでくれてありがとう🍻</small></h1>
   <div class="card"><h2>🏁 チーム対抗戦 最終結果</h2><div class="bars" id="closedTeams"></div></div>
-  <div class="card"><h2>🫧 泡キャッチ 最終ランキング</h2><ol class="rank" id="closedRank"></ol></div>
-  <div class="card"><h2>🍻 ジャスト乾杯 最終ランキング</h2><ol class="rank" id="closedRank2"></ol></div>
+  <div id="closedRanks" style="width:100%;display:flex;flex-direction:column;align-items:center"></div>
   <a class="btn ghost" href="event.html" style="text-decoration:none">イベントの詳細を見る</a>
 </section>
 
@@ -277,8 +360,99 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const $ = (id) => document.getElementById(id);
 const el = (tag, props, kids) => { const e = Object.assign(document.createElement(tag), props || {}); (kids || []).forEach((k) => e.append(k)); return e; };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const GAME_NAMES = { catch: '🫧 泡キャッチ', kanpai: '🍻 ジャスト乾杯' };
-const MAX = { catch: 999, kanpai: 500 };
+const GAME_LIST = [
+  { key: 'catch', name: '泡キャッチ', short: '泡キャッチ', em: '🫧', cls: '' },
+  { key: 'kanpai', name: 'ジャスト乾杯', short: '乾杯', em: '🍻', cls: 'k' },
+  { key: 'memory', name: 'おつまみ神経衰弱', short: '神経衰弱', em: '🃏', cls: 'c3', isNew: true },
+  { key: 'mole', name: 'モグラたたき', short: 'モグラ', em: '🔨', cls: 'c4', isNew: true },
+  { key: 'quiz', name: 'Phoenixクイズ', short: 'クイズ', em: '🧠', cls: 'c5', isNew: true },
+  { key: 'tap', name: 'カンパイ連打', short: '連打', em: '👆', cls: 'c6', isNew: true },
+];
+const GAME_NAMES = Object.fromEntries(GAME_LIST.map((g) => [g.key, g.em + ' ' + g.name]));
+const MAX = { catch: 999, kanpai: 500, memory: 300, mole: 999, quiz: 1000, tap: 300 };
+
+// ---------- 音（ファイルなし。ブラウザで音を作る） ----------
+const Sound = (() => {
+  let ctx = null, master = null, on = true, bgmTimer = 0, bgmStep = 0;
+  try { on = localStorage.getItem('nomy-sound') !== 'off'; } catch (e) { /* noop */ }
+  function ac() {
+    if (!ctx) {
+      const C = window.AudioContext || window.webkitAudioContext;
+      if (!C) return null;
+      ctx = new C(); master = ctx.createGain(); master.gain.value = .9; master.connect(ctx.destination);
+    }
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+  function tone(f, dur, type, vol, when, to) {
+    if (!on) return; const c = ac(); if (!c) return;
+    const t = c.currentTime + (when || 0);
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = type || 'sine'; o.frequency.setValueAtTime(f, t);
+    if (to) o.frequency.exponentialRampToValueAtTime(to, t + dur);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol || .15, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + .03);
+  }
+  let pourSrc = null;
+  function noise(dur, vol, freq, when) {
+    if (!on) return null; const c = ac(); if (!c) return null;
+    const t = c.currentTime + (when || 0);
+    const buf = c.createBuffer(1, Math.max(1, c.sampleRate * dur), c.sampleRate);
+    const d = buf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+    src.buffer = buf; f.type = 'bandpass'; f.frequency.value = freq || 1000; f.Q.value = .8;
+    g.gain.setValueAtTime(vol || .1, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    src.connect(f); f.connect(g); g.connect(master); src.start(t); src.stop(t + dur + .02);
+    return src;
+  }
+  const notes = (arr, step, type, vol) => arr.forEach((f, i) => f && tone(f, step * .9, type, vol, i * step));
+  const fx = {
+    tap: () => tone(500 + Math.random() * 300, .05, 'triangle', .12),
+    pop: (n) => tone(620 * Math.pow(1.05, Math.min(n || 0, 14)), .09, 'triangle', .18, 0, 940 * Math.pow(1.05, Math.min(n || 0, 14))),
+    bad: () => tone(220, .28, 'sawtooth', .1, 0, 80),
+    good: () => notes([784, 1047], .07, 'square', .07),
+    great: () => notes([659, 784, 1047, 1319], .06, 'square', .07),
+    fever: () => notes([523, 659, 784, 1047, 784, 1047, 1319], .07, 'square', .08),
+    beep: () => tone(880, .1, 'square', .07),
+    go: () => { tone(1047, .3, 'square', .08); tone(1568, .3, 'triangle', .06, .05); },
+    clink: () => { tone(2093, .35, 'sine', .14); tone(2637, .4, 'sine', .09, .03); tone(3136, .25, 'sine', .05, .05); },
+    flip: () => tone(1300, .05, 'triangle', .08, 0, 700),
+    match: () => notes([880, 1175], .07, 'triangle', .12),
+    whack: () => { noise(.07, .25, 700); tone(160, .1, 'sine', .25, 0, 90); },
+    tick: () => tone(1600, .03, 'square', .035),
+    correct: () => notes([1047, 1319, 1568], .07, 'triangle', .12),
+    wrong: () => notes([311, 233], .12, 'sawtooth', .07),
+    win: () => notes([523, 659, 784, 1047, 0, 1047, 1319], .1, 'triangle', .13),
+    end: () => notes([784, 659, 523], .12, 'triangle', .1),
+    shake: () => { for (let i = 0; i < 8; i++) noise(.05, .12, 2500, i * .12); },
+    pourStart: () => { if (!on) return; pourSrc = noise(6, .07, 1400); },
+    pourStop: () => { try { if (pourSrc) pourSrc.stop(); } catch (e) { /* noop */ } pourSrc = null; },
+  };
+  // BGM：ゆるいチップチューン（オリジナルのフレーズ）
+  const MEL = [659, 0, 784, 659, 523, 0, 587, 659, 698, 0, 659, 587, 523, 587, 659, 0, 784, 0, 880, 784, 659, 0, 587, 523, 587, 659, 523, 0, 440, 494, 523, 0];
+  const BASS = [131, 131, 196, 196, 175, 175, 196, 196];
+  function bgm(play, fast) {
+    clearInterval(bgmTimer); bgmTimer = 0;
+    if (!play || !on || REDUCED) return;
+    const step = fast ? .13 : .17;
+    bgmStep = 0;
+    bgmTimer = setInterval(() => {
+      const i = bgmStep++ % MEL.length;
+      if (MEL[i]) tone(MEL[i], step * .8, 'square', .035);
+      if (i % 4 === 0) tone(BASS[(i / 4) % BASS.length], step * 3, 'triangle', .06);
+      if (i % 2 === 1) noise(.03, .03, 6000);
+    }, step * 1000);
+  }
+  function setOn(v) {
+    on = v; try { localStorage.setItem('nomy-sound', v ? 'on' : 'off'); } catch (e) { /* noop */ }
+    if (!v) { clearInterval(bgmTimer); bgmTimer = 0; fx.pourStop(); }
+  }
+  return { fx, bgm, setOn, get on() { return on; }, unlock: () => ac() };
+})();
+const sfx = (name, a) => { try { Sound.fx[name](a); } catch (e) { /* noop */ } };
+$('snd').textContent = Sound.on ? '🔊' : '🔇';
+$('snd').addEventListener('click', () => { Sound.setOn(!Sound.on); $('snd').textContent = Sound.on ? '🔊' : '🔇'; if (Sound.on) { Sound.unlock(); sfx('good'); if (document.body.classList.contains('playing')) Sound.bgm(true); } });
+document.addEventListener('pointerdown', () => Sound.unlock(), { once: true });
 
 Nomy.installCSS();
 const nomyIn = (id, face, opts) => { $(id).innerHTML = Nomy.svg(Object.assign({ id: id + 'svg', face }, opts || {})); return $(id).querySelector('svg'); };
@@ -293,7 +467,7 @@ function show(id) {
 }
 
 // ---------- サーバーとのやりとり ----------
-const prev = { catch: 0, kanpai: 0 };
+const prev = { catch: 0, kanpai: 0, memory: 0, mole: 0, quiz: 0, tap: 0 };
 async function api(body) {
   if (PREVIEW) {
     await sleep(400);
@@ -304,10 +478,12 @@ async function api(body) {
     const rq = rk('kanpai', [{ nickname: 'でぃー', best: 312 }]);
     const me = (k, list) => ({ best: Math.max(prev[k], k === 'catch' ? 41 : 0), rank: list.findIndex((r) => r.nickname === 'ありす') + 1 || null });
     const teams = [{ key: 'beer', name: 'ビール組', em: '🍺', score: 400 + prev.catch + prev.kanpai, members: 3 }, { key: 'highball', name: 'ハイボール組', em: '🥃', score: 512, members: 3 }, { key: 'sour', name: 'レモンサワー組', em: '🍋', score: 130, members: 2 }].sort((a, b) => b.score - a.score);
+    const extra = {}; ['memory', 'mole', 'quiz', 'tap'].forEach((k) => { extra[k] = rk(k, [{ nickname: 'でぃー', best: { memory: 210, mole: 64, quiz: 720, tap: 88 }[k] }]); });
     const m = { nickname: 'ありす', catch: me('catch', rc), kanpai: me('kanpai', rq), team: 'beer' };
+    ['memory', 'mole', 'quiz', 'tap'].forEach((k) => { m[k] = me(k, extra[k]); });
     m.best = m.catch.best; m.rank = m.catch.rank;
     return { ok: true, open: !params.has('closed'), eventDate: params.get('date') || '2026-12-20', eventName: '年末だよ！みんなで忘年会',
-      me: m, ranking: rc, rankings: { catch: rc, kanpai: rq }, teams,
+      me: m, ranking: rc, rankings: { catch: rc, kanpai: rq, ...extra }, teams,
       mission: { connect: 'IT系の経営者', purpose: ['交流したい', '仕事の話を聞きたい'], dream: 'いつか自分のカフェを開きたい', job: '会社員', attend: '参加' } };
   }
   const ctl = new AbortController();
@@ -382,7 +558,9 @@ function renderOmikuji(animate) {
 }
 $('omiBtn').addEventListener('click', async () => {
   $('omiBtn').disabled = true;
+  sfx('shake');
   if (!REDUCED) { $('omiBox').classList.add('shake'); await sleep(1000); }
+  sfx('win');
   try { localStorage.setItem('nomy-omikuji', todayKey()); } catch (e) { /* noop */ }
   renderOmikuji(true);
 });
@@ -408,8 +586,15 @@ function renderStart() {
     : left > 0 ? ['🍻 開催まで あと', el('b', { textContent: left }), '日'] : ['🎉 今日が開催日！']));
   const me = state.me;
   const line = (g) => 'ベスト ' + (me[g] ? me[g].best : 0) + '点' + (me[g] && me[g].rank ? '・' + me[g].rank + '位' : '');
-  $('catchMe').textContent = line('catch');
-  $('kanpaiMe').textContent = line('kanpai');
+  const pick = GAME_LIST[hash('pick|' + todayKey()) % GAME_LIST.length].key;
+  $('gameList').replaceChildren(...GAME_LIST.map((g) => {
+    const b = el('button', { type: 'button', className: 'gcard ' + g.cls + (g.key === pick ? ' pick' : '') }, [
+      g.isNew ? el('span', { className: 'new', textContent: 'NEW' }) : '',
+      el('span', { className: 'em', textContent: g.em }), el('b', { textContent: g.name }), el('small', { textContent: line(g.key) }),
+    ]);
+    b.addEventListener('click', () => { sfx('tap'); START[g.key](); });
+    return b;
+  }));
   const team = (state.teams || []).find((t) => t.key === me.team);
   $('myTeam').replaceChildren(...(team ? ['あなたは ', el('span', { textContent: team.em }), team.name + '！'] : ['チームは最初に遊んだときに決まるよ']));
   renderTeams($('teamBars'), state.teams || [], me.team);
@@ -421,10 +606,14 @@ function renderStart() {
 }
 
 function drawRankTab() {
+  if (!$('rankTabs').children.length) {
+    $('rankTabs').replaceChildren(...GAME_LIST.map((g) => el('button', { type: 'button', role: 'tab', textContent: g.em + ' ' + g.short })));
+    [...$('rankTabs').children].forEach((b, i) => { b.dataset.k = GAME_LIST[i].key; });
+  }
   $('rankTabs').querySelectorAll('button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.k === rankTab)));
   renderRank($('rankList'), (state.rankings || {})[rankTab] || [], state.me.nickname);
 }
-$('rankTabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; rankTab = b.dataset.k; drawRankTab(); });
+$('rankTabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; sfx('tap'); rankTab = b.dataset.k; drawRankTab(); });
 
 // ---------- 泡キャッチ ----------
 const ITEMS = [
@@ -508,15 +697,16 @@ function loop(now) {
     it.y += it.vy * dt;
     if (it.y > catchY - 10 && it.y < catchY + 40 && Math.abs(it.x - playerX) < 48) {
       let txt;
-      if (it.time) { bonus += 3; txt = '+3秒!'; face('wow', 'jump'); }
-      else if (it.pts < 0) { combo = 0; setCombo(); score = Math.max(0, score + it.pts); txt = String(it.pts); face('sad', 'droop'); if (navigator.vibrate) navigator.vibrate(60); }
+      if (it.time) { bonus += 3; txt = '+3秒!'; face('wow', 'jump'); sfx('great'); }
+      else if (it.pts < 0) { combo = 0; setCombo(); score = Math.max(0, score + it.pts); txt = String(it.pts); face('sad', 'droop'); sfx('bad'); if (navigator.vibrate) navigator.vibrate(60); }
       else {
         combo++;
         const mult = setCombo() * (fever ? 2 : 1);
         const got = it.pts * mult;
         score += got; txt = '+' + got;
+        sfx('pop', combo);
         if (it.fever) {
-          feverUntil = now + FEVER_MS; txt = 'FEVER!';
+          feverUntil = now + FEVER_MS; txt = 'FEVER!'; sfx('fever'); Sound.bgm(true, true); setTimeout(() => { if (running) Sound.bgm(true); }, FEVER_MS);
           const f = $('feverTxt'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
           if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
         }
@@ -571,6 +761,7 @@ async function countdownReady() {
   const r = $('ready');
   for (const s of ['3', '2', '1', 'カンパイ！']) {
     r.textContent = s; r.classList.remove('go'); void r.offsetWidth; r.classList.add('go');
+    sfx(s.length > 1 ? 'clink' : 'beep');
     await sleep(REDUCED ? 300 : 650);
   }
   r.textContent = '';
@@ -589,6 +780,7 @@ async function startCatch() {
   ctx.clearRect(0, 0, W, H);
   await countdownReady();
   running = true;
+  Sound.bgm(true);
   t0 = last = performance.now();
   nextSpawn = t0 + 200;
   raf = requestAnimationFrame(loop);
@@ -634,12 +826,14 @@ function kTap() {
     $('kBtn').textContent = 'ストップ！';
     $('kSay').textContent = '……いまだ！';
     kStartAt = performance.now();
+    sfx('pourStart');
     kRaf = requestAnimationFrame(kLoop);
   } else if (kPhase === 'pour') kStop(false);
 }
 
 async function kStop(over) {
   cancelAnimationFrame(kRaf);
+  sfx('pourStop');
   kPhase = 'judge';
   $('kBtn').disabled = true;
   const diff = Math.abs(kLevel - kTarget);
@@ -651,6 +845,7 @@ async function kStop(over) {
   const j = $('judge');
   j.replaceChildren(label, el('small', { textContent: '+' + pts + '点' }));
   j.classList.remove('go'); void j.offsetWidth; j.classList.add('go');
+  sfx(over ? 'bad' : diff <= 1 ? 'fever' : diff <= 3 ? 'clink' : diff <= 7 ? 'good' : 'tick');
   if (navigator.vibrate) navigator.vibrate(over ? 120 : diff <= 3 ? [20, 30, 20] : 30);
   if (diff <= 1 && !over && !REDUCED) confetti(20);
   await sleep(1100);
@@ -674,7 +869,8 @@ async function startKanpai() {
 // ---------- 結果 ----------
 let lastGame = 'catch';
 async function finish(game, sc) {
-  running = false; kRunning = false;
+  running = false; kRunning = false; moRunning = false; tRunning = false; qRunning = false; mRunning = false;
+  Sound.bgm(false); sfx('pourStop');
   lastGame = game;
   document.body.classList.remove('playing');
   $('play').classList.remove('fever-on');
@@ -699,6 +895,7 @@ async function finish(game, sc) {
   $('resBest').textContent = me.best;
   $('resRank').textContent = me.rank ? '現在 ' + me.rank + '位' : '';
   renderRank($('resRankList'), (state.rankings || {})[game] || [], state.me.nickname);
+  sfx(sc > before && sc > 0 ? 'win' : 'end');
   if (sc > before && sc > 0) {
     const team = (state.teams || []).find((t) => t.key === state.me.team);
     $('resNew').append(el('span', { className: 'newbest', textContent: '自己ベスト更新！' }));
@@ -718,10 +915,217 @@ function confetti(n) {
   }
 }
 
-$('goCatch').addEventListener('click', startCatch);
-$('goKanpai').addEventListener('click', startKanpai);
-$('againBtn').addEventListener('click', () => (lastGame === 'kanpai' ? startKanpai() : startCatch()));
-$('homeBtn').addEventListener('click', () => { renderStart(); show('start'); });
+// ---------- おつまみ神経衰弱（8組16枚。はやく・ミス少なく） ----------
+const M_ITEMS = ['🍺', '☕', '💨', '🍗', '🫛', '🍋', '🥃', '🍵'];
+let mRunning = false, mT0 = 0, mTimer = 0, mOpen = [], mDone = 0, mMiss = 0, mLock = false;
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function startMemory() {
+  document.body.classList.add('playing'); show('memory');
+  mOpen = []; mDone = 0; mMiss = 0; mLock = false; mRunning = true;
+  $('mMiss').textContent = '0'; $('mSay').textContent = '同じおつまみを2枚そろえてね！';
+  const deck = shuffle([...M_ITEMS, ...M_ITEMS]);
+  $('mgrid').replaceChildren(...deck.map((em, i) => {
+    const b = el('button', { type: 'button', className: 'mcard', 'aria-label': 'カード' + (i + 1) }, [el('div', { className: 'in' }, [el('div', { className: 'f', textContent: '🫧' }), el('div', { className: 'b', textContent: em })])]);
+    b.dataset.em = em;
+    b.addEventListener('click', () => mFlip(b));
+    return b;
+  }));
+  mT0 = performance.now();
+  clearInterval(mTimer);
+  mTimer = setInterval(() => { $('mTime').textContent = ((performance.now() - mT0) / 1000).toFixed(1) + '秒'; }, 100);
+  Sound.bgm(true);
+}
+async function mFlip(b) {
+  if (!mRunning || mLock || b.classList.contains('open') || b.classList.contains('done')) return;
+  b.classList.add('open'); sfx('flip'); mOpen.push(b);
+  if (mOpen.length < 2) return;
+  mLock = true;
+  const [a, c] = mOpen;
+  if (a.dataset.em === c.dataset.em) {
+    await sleep(250);
+    a.classList.add('done'); c.classList.add('done'); sfx('match');
+    mDone++;
+    $('mSay').textContent = ['いいね！', 'その調子！', 'ナイス！', 'すごい！'][mDone % 4];
+  } else {
+    mMiss++; $('mMiss').textContent = mMiss;
+    await sleep(600);
+    a.classList.add('miss'); c.classList.add('miss'); sfx('tick');
+    await sleep(300);
+    a.classList.remove('open', 'miss'); c.classList.remove('open', 'miss');
+  }
+  mOpen = []; mLock = false;
+  if (mDone === M_ITEMS.length) {
+    mRunning = false; clearInterval(mTimer);
+    const sec = (performance.now() - mT0) / 1000;
+    const sc = Math.max(20, Math.min(MAX.memory, Math.round(330 - sec * 4 - mMiss * 8)));
+    $('mSay').textContent = 'ぜんぶそろった！ ' + sec.toFixed(1) + '秒'; confetti(30);
+    await sleep(900);
+    finish('memory', sc);
+  }
+}
+
+// ---------- おつまみモグラたたき（30秒） ----------
+const MO_ITEMS = [{ em: '🫛', pts: 1, w: 55 }, { em: '🍗', pts: 3, w: 18 }, { em: '🌟', pts: 5, w: 6 }, { em: '🌶️', pts: -3, w: 21 }];
+let moRunning = false, moScore = 0, moT0 = 0, moRaf = 0, moNext = 0;
+const MO_TOTAL = 30;
+function startMole() {
+  document.body.classList.add('playing'); show('mole');
+  $('holes').replaceChildren(...Array.from({ length: 9 }, (_, i) => {
+    const h = el('button', { type: 'button', className: 'hole', 'aria-label': '穴' + (i + 1) }, [el('span', { className: 'it' }), el('span', { className: 'pt' })]);
+    h.addEventListener('pointerdown', (e) => { e.preventDefault(); moHit(h); });
+    return h;
+  }));
+  moScore = 0; $('moScore').textContent = '0';
+  moRunning = true; moT0 = moNext = performance.now() + 300;
+  Sound.bgm(true, true);
+  moRaf = requestAnimationFrame(moLoop);
+}
+function moPick() { let r = Math.random() * 100; for (const it of MO_ITEMS) if ((r -= it.w) < 0) return it; return MO_ITEMS[0]; }
+function moLoop(now) {
+  if (!moRunning) return;
+  const el2 = Math.max(0, (now - moT0) / 1000), left = Math.max(0, MO_TOTAL - el2), p = Math.min(1, el2 / MO_TOTAL);
+  $('moTime').textContent = Math.ceil(left); $('moBar').style.transform = `scaleX(${left / MO_TOTAL})`;
+  if (now >= moNext) {
+    const free = [...$('holes').children].filter((h) => !h.classList.contains('up'));
+    if (free.length) {
+      const h = free[Math.floor(Math.random() * free.length)];
+      const it = moPick();
+      h.querySelector('.it').textContent = it.em; h.dataset.pts = it.pts; h.classList.remove('hit'); h.classList.add('up');
+      const stay = (1100 - p * 550) * (0.8 + Math.random() * 0.4);
+      clearTimeout(h._t); h._t = setTimeout(() => h.classList.remove('up'), stay);
+    }
+    moNext = now + (620 - p * 360) * (0.6 + Math.random() * 0.6);
+  }
+  if (left <= 0) { moRunning = false; [...$('holes').children].forEach((h) => h.classList.remove('up')); return finish('mole', Math.min(MAX.mole, moScore)); }
+  moRaf = requestAnimationFrame(moLoop);
+}
+function moHit(h) {
+  if (!moRunning || !h.classList.contains('up') || h.classList.contains('hit')) return;
+  const pts = Number(h.dataset.pts);
+  moScore = Math.max(0, moScore + pts); $('moScore').textContent = moScore;
+  h.classList.add('hit'); clearTimeout(h._t); h._t = setTimeout(() => h.classList.remove('up', 'hit'), 180);
+  const pt = h.querySelector('.pt'); pt.textContent = (pts > 0 ? '+' : '') + pts; pt.style.color = pts > 0 ? '' : '#FF7A5C';
+  pt.classList.remove('go'); void pt.offsetWidth; pt.classList.add('go');
+  sfx(pts < 0 ? 'bad' : 'whack'); if (pts >= 5) sfx('great');
+  if (navigator.vibrate) navigator.vibrate(pts < 0 ? 80 : 15);
+}
+
+// ---------- Phoenixクイズ（10問・早く答えるほど高得点） ----------
+const QUIZ = [
+  ['お酒', 'ビールの主な原料は？', ['麦芽とホップ', '米とこうじ', 'ぶどう', 'さとうきび']],
+  ['お酒', '「乾杯！」を英語で言うと？', ['Cheers!', 'Bless you!', 'Good luck!', 'Bon appétit!']],
+  ['お酒', 'ハイボールの基本の組み合わせは？', ['ウイスキー＋炭酸水', '焼酎＋お茶', 'ビール＋トマトジュース', 'ワイン＋炭酸水']],
+  ['お酒', '日本でお酒を飲めるのは何歳から？', ['20歳', '18歳', '19歳', '21歳']],
+  ['お酒', '「レッドアイ」はビールと何を混ぜたカクテル？', ['トマトジュース', 'オレンジジュース', 'コーラ', '牛乳']],
+  ['お酒', '「シャンディガフ」はビールと何を混ぜたカクテル？', ['ジンジャーエール', 'トマトジュース', 'コーラ', 'ラム酒']],
+  ['お酒', 'ワインの原料になる果物は？', ['ぶどう', 'りんご', 'もも', '梅']],
+  ['お酒', '日本酒の主な原料は？', ['米', '麦', 'いも', 'とうもろこし']],
+  ['お酒', 'ビールの一般的なアルコール度数に一番近いのは？', ['5%', '15%', '25%', '40%']],
+  ['お酒', 'ラム酒の原料は？', ['さとうきび', '大麦', 'ぶどう', '米']],
+  ['お酒', 'テキーラの原料は？', ['アガベ（リュウゼツラン）', 'サボテン', 'とうもろこし', 'じゃがいも']],
+  ['お酒', 'ウイスキーの原料として正しいのは？', ['大麦などの穀物', 'ぶどう', 'りんご', 'さとうきび']],
+  ['お酒', '生ビールの白い泡の役割としてよく言われるのは？', ['ビールが空気にふれるのを防ぐ', 'ビールを冷やす', 'ビールを甘くする', '色をつける']],
+  ['カフェ', 'エスプレッソにミルクの泡をたっぷりのせたものは？', ['カプチーノ', 'アメリカーノ', 'ドッピオ', 'アフォガート']],
+  ['カフェ', 'カフェラテの「ラテ」はイタリア語で何という意味？', ['牛乳', 'コーヒー', '泡', '甘い']],
+  ['カフェ', 'カフェモカに入っているのは？', ['チョコレート', '抹茶', 'キャラメル', 'はちみつ']],
+  ['カフェ', '「アフォガート」はアイスに何をかけたデザート？', ['エスプレッソ', '紅茶', 'ビール', 'ワイン']],
+  ['カフェ', 'コーヒーに含まれる、眠気覚ましで有名な成分は？', ['カフェイン', 'ビタミンC', 'クエン酸', 'カルシウム']],
+  ['カフェ', '紅茶・緑茶・ウーロン茶の茶葉の植物は？', ['3つとも同じ', '3つとも別々', '紅茶だけちがう', '緑茶だけちがう']],
+  ['カフェ', '抹茶の原料になるお茶の葉は？', ['てん茶', 'ほうじ茶', '玄米茶', 'ウーロン茶']],
+  ['カフェ', '水の次に世界でよく飲まれていると言われる飲み物は？', ['お茶', 'コーヒー', 'ビール', 'コーラ']],
+  ['シーシャ', 'シーシャ（水たばこ）で煙を通して冷やすのに使うのは？', ['水', '氷', '牛乳', 'お茶']],
+  ['おつまみ', '枝豆は、何の豆を若いうちに収穫したもの？', ['大豆', '小豆', 'えんどう豆', 'そら豆']],
+  ['おつまみ', '焼き鳥の「ねぎま」は鶏肉と何を交互に刺したもの？', ['ねぎ', '玉ねぎ', 'ピーマン', 'しいたけ']],
+  ['マナー', '乾杯のとき、グラスを合わせる高さのマナーは？', ['目上の人より少し低く', '目上の人より高く', '頭の上で', 'テーブルの下で']],
+  ['Phoenix', 'Phoenixのチーム対抗戦。優勝チームが当日やることは？', ['最初の乾杯の音頭', 'お会計', '片付け', '司会']],
+  ['Phoenix', 'ノミィは何の形のキャラクター？', ['ビールジョッキ', 'コーヒーカップ', 'ワイングラス', 'ティーポット']],
+  ['Phoenix', 'Phoenixの会で禁止されているのは？', ['しつこい勧誘・営業', '夢を語ること', '乾杯すること', '名前を名乗ること']],
+];
+const Q_COUNT = 10, Q_SEC = 10;
+let qRunning = false, qList = [], qIdx = 0, qScore = 0, qT0 = 0, qRaf = 0, qAnswered = false;
+function startQuiz() {
+  document.body.classList.add('playing'); show('quiz');
+  qList = shuffle(QUIZ.slice()).slice(0, Q_COUNT); qIdx = 0; qScore = 0; qRunning = true;
+  $('qScore').textContent = '0';
+  Sound.bgm(true);
+  qShow();
+}
+function qShow() {
+  const [cat, text, opts] = qList[qIdx];
+  qAnswered = false;
+  $('qNo').textContent = qIdx + 1; $('qCat').textContent = '【' + cat + '】'; $('qText').textContent = text; $('qFb').textContent = '';
+  const order = shuffle(opts.map((o, i) => [o, i === 0]));
+  $('qOpts').replaceChildren(...order.map(([o, ok]) => {
+    const b = el('button', { type: 'button', textContent: o });
+    b.dataset.ok = ok ? '1' : '';
+    b.addEventListener('click', () => qAnswer(b));
+    return b;
+  }));
+  qT0 = performance.now();
+  cancelAnimationFrame(qRaf);
+  const tick = (now) => {
+    if (!qRunning || qAnswered) return;
+    const left = Math.max(0, Q_SEC - (now - qT0) / 1000);
+    $('qBar').style.transform = `scaleX(${left / Q_SEC})`;
+    if (left <= 0) return qAnswer(null);
+    qRaf = requestAnimationFrame(tick);
+  };
+  qRaf = requestAnimationFrame(tick);
+}
+async function qAnswer(b) {
+  if (qAnswered || !qRunning) return;
+  qAnswered = true;
+  const left = Math.max(0, Q_SEC - (performance.now() - qT0) / 1000);
+  const btns = [...$('qOpts').children];
+  btns.forEach((x) => { x.disabled = true; if (x.dataset.ok) x.classList.add('ok'); });
+  if (b && b.dataset.ok) {
+    const pts = Math.round(50 + left * 5);
+    qScore += pts; $('qScore').textContent = qScore;
+    $('qFb').textContent = '⭕ 正解！ +' + pts; sfx('correct');
+  } else {
+    if (b) b.classList.add('ng');
+    $('qFb').textContent = b ? '❌ ざんねん…' : '⏰ 時間切れ！'; sfx('wrong');
+  }
+  await sleep(1200);
+  qIdx++;
+  if (qIdx >= Q_COUNT) { qRunning = false; return finish('quiz', Math.min(MAX.quiz, qScore)); }
+  qShow();
+}
+
+// ---------- カンパイ連打（10秒） ----------
+const T_SEC = 10;
+let tRunning = false, tCount = 0, tT0 = 0, tRaf = 0, tStarted = false;
+function startTap() {
+  document.body.classList.add('playing'); show('tap');
+  $('tapBtn').innerHTML = Nomy.svg({ id: 'tp', face: 'happy' });
+  tCount = 0; tStarted = false; tRunning = true;
+  $('tScore').textContent = '0'; $('tTime').textContent = T_SEC.toFixed(1); $('tMeter').style.width = '0';
+  $('tSay').textContent = 'ノミィをタップしたらスタート！10秒で何回？';
+}
+function tLoop(now) {
+  if (!tRunning) return;
+  const left = Math.max(0, T_SEC - (now - tT0) / 1000);
+  $('tTime').textContent = left.toFixed(1);
+  if (left <= 0) { tRunning = false; $('tSay').textContent = 'そこまで！'; sfx('clink'); return setTimeout(() => finish('tap', Math.min(MAX.tap, tCount)), 600); }
+  tRaf = requestAnimationFrame(tLoop);
+}
+$('tapBtn').addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  if (!tRunning) return;
+  if (!tStarted) { tStarted = true; tT0 = performance.now(); Sound.bgm(true, true); tRaf = requestAnimationFrame(tLoop); $('tSay').textContent = '連打！連打！'; }
+  tCount++;
+  $('tScore').textContent = tCount;
+  $('tMeter').style.width = Math.min(100, (tCount % 10) * 10 + 10) + '%';
+  const b = $('tapBtn'); b.classList.remove('big'); void b.offsetWidth; b.classList.add('big');
+  if (tCount % 10 === 0) { sfx('clink'); $('tSay').textContent = tCount + '回！カンパイ🍻'; } else sfx('tap');
+  const fx = el('span', { className: 'tapfx', textContent: '+1' });
+  fx.style.left = (e.clientX - 10 + (Math.random() - .5) * 40) + 'px'; fx.style.top = (e.clientY - 30) + 'px';
+  document.body.append(fx); setTimeout(() => fx.remove(), 600);
+});
+
+const START = { catch: startCatch, kanpai: startKanpai, memory: startMemory, mole: startMole, quiz: startQuiz, tap: startTap };
+$('againBtn').addEventListener('click', () => { sfx('tap'); START[lastGame](); });
+$('homeBtn').addEventListener('click', () => { sfx('tap'); Sound.bgm(false); renderStart(); show('start'); });
 
 // ---------- はじめる ----------
 function loadSdk() {
@@ -754,8 +1158,11 @@ async function main() {
   if (!state.open) {
     nomyIn('closedNomy', 'happy');
     renderTeams($('closedTeams'), state.teams || [], state.me.team);
-    renderRank($('closedRank'), (state.rankings || {}).catch || state.ranking, state.me.nickname);
-    renderRank($('closedRank2'), (state.rankings || {}).kanpai || [], state.me.nickname);
+    $('closedRanks').replaceChildren(...GAME_LIST.map((g) => {
+      const ol = el('ol', { className: 'rank' });
+      renderRank(ol, (state.rankings || {})[g.key] || [], state.me.nickname);
+      return el('div', { className: 'card' }, [el('h2', { textContent: g.em + ' ' + g.name + ' 最終ランキング' }), ol]);
+    }));
     show('closed');
     return;
   }
