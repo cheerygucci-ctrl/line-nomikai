@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Phoenix｜夢と働き方を、ゆるく語ろう。飲み会・カフェ会・シーシャ会</title>
+<meta name="description" content="Phoenixは、飲み会・カフェ会・シーシャ会を通して「将来の夢」や「これからの働き方」を気軽に語り合えるコミュニティ。LINEで友だち追加して、1分アンケートに答えるだけで参加できます。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Phoenix｜夢と働き方を、ゆるく語ろう。">
+<meta property="og:description" content="飲み会・カフェ会・シーシャ会で、将来の夢やこれからの働き方を気軽に語り合うコミュニティ。LINEで1分アンケートに答えて参加しよう！">
+<meta property="og:url" content="https://cheerygucci-ctrl.github.io/line-nomikai/lp.html">
+<meta property="og:image" content="https://cheerygucci-ctrl.github.io/line-nomikai/ogp.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Phoenix｜夢と働き方を、ゆるく語ろう。">
+<meta name="twitter:description" content="飲み会・カフェ会・シーシャ会で、将来の夢やこれからの働き方を気軽に語り合うコミュニティ。">
+<meta name="twitter:image" content="https://cheerygucci-ctrl.github.io/line-nomikai/ogp.png">
+<meta name="theme-color" content="#F59166">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<script src="nomy.js"></script>
+<style>
+  :root {
+    --sun-1: #FFEBD6; --sun-2: #FFC497; --sun-3: #F59166;
+    --coral: #E4572E; --ink: #3A220A; --ink-soft: #7A5528; --night: #1F2A44;
+    --paper: #FFFAF3; --line: #06C755; --gold: #F6B93B;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; color: var(--ink); background: var(--paper); font-family: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Hiragino Sans", sans-serif; line-height: 1.7; overflow-x: hidden; }
+  a { color: inherit; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 16px; }
+  h2.sec { text-align: center; font-size: clamp(24px, 6vw, 36px); font-weight: 900; margin: 0 0 6px; }
+  p.lead { text-align: center; color: var(--ink-soft); margin: 0 0 28px; font-weight: 700; }
+  .en { display: block; text-align: center; font-size: 13px; letter-spacing: .25em; color: var(--coral); font-weight: 900; margin-bottom: 4px; }
+  section { padding: 72px 0; position: relative; }
+
+  /* ボタン */
+  .btn-line { display: inline-flex; align-items: center; justify-content: center; gap: 10px; background: var(--line); color: #fff; text-decoration: none; font-weight: 900; font-size: 18px;
+    border-radius: 999px; padding: 16px 30px; box-shadow: 0 6px 0 #04913E; transition: transform .12s ease, box-shadow .12s ease; }
+  .btn-line:active { transform: translateY(4px); box-shadow: 0 2px 0 #04913E; }
+  .btn-line svg { width: 26px; height: 26px; flex-shrink: 0; }
+  .btn-line:focus-visible, .btn-sub:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+  .btn-sub { display: inline-block; text-decoration: none; font-weight: 900; color: var(--ink); background: #fff; border-radius: 999px; padding: 13px 24px; box-shadow: 0 5px 0 rgba(58,34,10,.18); }
+
+  /* ヒーロー */
+  .hero { min-height: 100svh; padding: calc(28px + env(safe-area-inset-top)) 0 60px; background: linear-gradient(180deg, var(--sun-1) 0%, var(--sun-2) 48%, var(--sun-3) 100%); overflow: hidden; display: flex; align-items: center; }
+  .hero .wrap { display: grid; gap: 18px; align-items: center; grid-template-columns: 1fr; text-align: center; position: relative; z-index: 2; }
+  .badge { display: inline-block; background: #fff; color: var(--coral); border-radius: 999px; padding: 4px 16px; font-weight: 900; font-size: 13px; letter-spacing: .2em; justify-self: center; box-shadow: 0 3px 0 rgba(58,34,10,.12); }
+  .hero h1 { font-size: clamp(38px, 11vw, 76px); line-height: 1.15; margin: 4px 0 0; font-weight: 900; letter-spacing: .01em; }
+  .hero h1 .mark { background: linear-gradient(transparent 62%, #fff 62%); padding: 0 .08em; }
+  .hero .sub { font-size: clamp(15px, 4vw, 19px); font-weight: 700; margin: 0; }
+  .kinds { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+  .kinds span { background: rgba(255,255,255,.75); border: 2px solid #fff; border-radius: 999px; padding: 6px 14px; font-weight: 900; font-size: 15px; animation: bob 3s ease-in-out infinite; }
+  .kinds span:nth-child(2) { animation-delay: -.7s; } .kinds span:nth-child(3) { animation-delay: -1.4s; } .kinds span:nth-child(4) { animation-delay: -2.1s; }
+  @keyframes bob { 50% { transform: translateY(-5px); } }
+  .hero-nomy { width: min(210px, 48vw); justify-self: center; position: relative; }
+  .hero-nomy .bubble { position: absolute; right: -78px; top: 2px; background: #fff; border-radius: 16px 16px 16px 4px; padding: 6px 12px; font-weight: 900; font-size: 14px; white-space: nowrap; box-shadow: 0 3px 0 rgba(58,34,10,.15); animation: pop 2.6s ease-in-out infinite; }
+  @keyframes pop { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08) rotate(-3deg); } }
+  .cta-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; align-items: center; }
+  .note-s { font-size: 13px; font-weight: 700; color: var(--ink-soft); margin: 0; }
+  .float { position: absolute; z-index: 1; pointer-events: none; font-size: var(--s); opacity: .55; left: var(--x); bottom: -60px; animation: rise var(--d) linear var(--delay) infinite; }
+  @keyframes rise { to { transform: translate(var(--drift), -120vh) rotate(var(--r)); } }
+  .scroll-hint { position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); z-index: 2; font-size: 12px; font-weight: 900; letter-spacing: .2em; color: var(--ink); opacity: .7; animation: hint 1.6s ease-in-out infinite; }
+  @keyframes hint { 50% { transform: translate(-50%, 6px); } }
+
+  /* 次の会 */
+  .next { background: var(--night); color: #fff; }
+  .next .card { background: rgba(255,255,255,.06); border: 2px solid rgba(255,255,255,.14); border-radius: 26px; padding: 26px 20px; text-align: center; max-width: 620px; margin: 0 auto; }
+  .next .en { color: var(--gold); }
+  .next h3 { font-size: clamp(22px, 6vw, 30px); margin: 0 0 12px; }
+  .next .meta { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 18px; }
+  .next .meta span { background: rgba(255,255,255,.1); border-radius: 999px; padding: 4px 14px; font-weight: 700; }
+  .stats { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; margin-bottom: 20px; }
+  .stat { background: #fff; color: var(--ink); border-radius: 18px; padding: 10px 18px; min-width: 130px; }
+  .stat b { display: block; font-size: 34px; line-height: 1.1; color: var(--coral); font-variant-numeric: tabular-nums; }
+  .stat small { font-weight: 700; color: var(--ink-soft); }
+
+  /* 会の種類 */
+  .kinds-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+  .kcard { background: #fff; border-radius: 24px; padding: 22px 18px; box-shadow: 0 6px 0 rgba(58,34,10,.1); text-align: center; transition: transform .2s ease; }
+  .kcard:hover { transform: translateY(-4px) rotate(-1deg); }
+  .kcard .em { font-size: 54px; display: block; line-height: 1.2; }
+  .kcard h3 { margin: 6px 0 4px; font-size: 21px; }
+  .kcard p { margin: 0; color: var(--ink-soft); font-size: 14px; font-weight: 700; }
+
+  /* 楽しいポイント */
+  .points { background: linear-gradient(180deg, #FFF1E2, #FFE2C7); }
+  .plist { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .pcard { background: #fff; border-radius: 24px; padding: 22px; position: relative; overflow: hidden; }
+  .pcard .num { position: absolute; right: 14px; top: 6px; font-size: 54px; font-weight: 900; color: #FFE2C7; line-height: 1; }
+  .pcard .em { font-size: 36px; }
+  .pcard h3 { margin: 4px 0 6px; font-size: 19px; position: relative; }
+  .pcard p { margin: 0; font-size: 14px; color: var(--ink-soft); font-weight: 700; position: relative; }
+  .tag-new { display: inline-block; background: var(--coral); color: #fff; font-size: 11px; border-radius: 999px; padding: 1px 8px; vertical-align: 3px; margin-left: 4px; }
+
+  /* 参加の流れ */
+  .steps { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); counter-reset: s; }
+  .step { background: #fff; border: 3px dashed #FFC497; border-radius: 24px; padding: 22px 18px; text-align: center; }
+  .step .n { width: 46px; height: 46px; border-radius: 50%; background: var(--coral); color: #fff; font-weight: 900; font-size: 22px; display: grid; place-items: center; margin: 0 auto 8px; }
+  .step h3 { margin: 0 0 4px; font-size: 19px; }
+  .step p { margin: 0; font-size: 14px; color: var(--ink-soft); font-weight: 700; }
+
+  /* ルール・FAQ */
+  .rules { background: #fff; border-radius: 24px; padding: 22px; max-width: 680px; margin: 0 auto 28px; border-left: 8px solid var(--coral); }
+  .rules h3 { margin: 0 0 6px; }
+  .rules ul { margin: 0; padding-left: 1.2em; font-weight: 700; }
+  details { background: #fff; border-radius: 18px; padding: 0 18px; max-width: 680px; margin: 0 auto 10px; box-shadow: 0 3px 0 rgba(58,34,10,.08); }
+  summary { cursor: pointer; font-weight: 900; padding: 16px 0; list-style: none; display: flex; justify-content: space-between; gap: 10px; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "＋"; color: var(--coral); transition: transform .2s; }
+  details[open] summary::after { transform: rotate(45deg); }
+  details p { margin: 0 0 16px; color: var(--ink-soft); font-weight: 700; }
+
+  /* 最後のCTA */
+  .final { background: linear-gradient(180deg, var(--sun-2), var(--sun-3)); text-align: center; overflow: hidden; }
+  .final h2 { font-size: clamp(26px, 7vw, 42px); margin: 0 0 8px; }
+  .final .nomys { display: flex; justify-content: center; gap: 0; margin: 10px 0 14px; }
+  .final .nomys > div { width: 120px; }
+  .final .nomys > div:first-child { transform: rotate(-10deg); } .final .nomys > div:last-child { transform: rotate(10deg) scaleX(-1); }
+  .share { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 22px; }
+  .share a, .share button { border: 0; font: inherit; font-weight: 900; font-size: 14px; border-radius: 999px; padding: 9px 16px; background: rgba(255,255,255,.85); color: var(--ink); text-decoration: none; cursor: pointer; }
+  footer { text-align: center; padding: 26px 16px calc(100px + env(safe-area-inset-bottom)); font-size: 12px; color: var(--ink-soft); }
+
+  /* 下に固定の参加ボタン（スマホ） */
+  .sticky { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: linear-gradient(transparent, rgba(255,250,243,.96) 35%); display: flex; justify-content: center; transform: translateY(120%); transition: transform .3s ease; }
+  .sticky.on { transform: none; }
+  .sticky .btn-line { width: 100%; max-width: 420px; }
+
+  /* 出てくる動き */
+  .reveal { opacity: 0; transform: translateY(26px); transition: opacity .6s ease, transform .6s cubic-bezier(.2,.8,.2,1); transition-delay: var(--dl, 0s); }
+  .reveal.in { opacity: 1; transform: none; }
+  .toast { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); background: var(--ink); color: #fff; border-radius: 999px; padding: 8px 18px; font-weight: 700; z-index: 40; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.on { opacity: 1; }
+
+  @media (min-width: 820px) {
+    .hero .wrap { grid-template-columns: 1.3fr 1fr; text-align: left; }
+    .hero .badge, .kinds, .cta-row { justify-self: start; justify-content: flex-start; }
+    .hero-nomy { grid-row: 1 / span 6; grid-column: 2; width: 280px; }
+    .hero h1 { font-size: 60px; }
+    .sticky { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .reveal { opacity: 1; transform: none; }
+    .float { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero" id="top">
+  <div id="floats" aria-hidden="true"></div>
+  <div class="wrap">
+    <span class="badge">PHOENIX COMMUNITY</span>
+    <div class="hero-nomy" id="heroNomy"><span class="bubble">いっしょに語ろ！</span></div>
+    <h1><span class="mark">夢</span>と<span class="mark">働き方</span>を、<br>ゆるく語ろう。</h1>
+    <p class="sub">飲み会・カフェ会・シーシャ会で、<br>「これからどうしたい？」を気軽に話せるコミュニティ。</p>
+    <div class="kinds"><span>🍻 飲み会</span><span>☕ カフェ会</span><span>💨 シーシャ会</span><span>🎉 イベント</span></div>
+    <div class="cta-row">
+      <a class="btn-line" href="https://line.me/R/ti/p/@771asgxl" data-cta="hero"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3C6.5 3 2 6.6 2 11c0 3.9 3.5 7.2 8.3 7.9.3.1.8.2.9.5.1.3.1.7 0 1l-.1.9c0 .3-.2 1 .9.5 1.1-.4 5.8-3.4 7.9-5.9C21.3 14.4 22 12.8 22 11c0-4.4-4.5-8-10-8z"/></svg>LINEで友だち追加して参加</a>
+    </div>
+    <p class="note-s">参加は無料で登録 → 1分アンケートに答えるだけ。20歳以上の方が対象です。</p>
+  </div>
+  <div class="scroll-hint" aria-hidden="true">SCROLL ↓</div>
+</header>
+
+<section class="next" id="next">
+  <div class="wrap">
+    <div class="card reveal">
+      <span class="en">NEXT EVENT</span>
+      <h3 id="evName">次の会を準備中！</h3>
+      <div class="meta" id="evMeta"><span>🗓️ 日程は近日発表</span></div>
+      <div class="stats" id="stats" hidden>
+        <div class="stat"><b id="statDays">0</b><small>開催まで（日）</small></div>
+        <div class="stat"><b id="statPeople">0</b><small>参加予定（人）</small></div>
+      </div>
+      <a class="btn-line" href="https://line.me/R/ti/p/@771asgxl" data-cta="next">LINEでお知らせを受け取る</a>
+    </div>
+  </div>
+</section>
+
+<section id="kinds">
+  <div class="wrap">
+    <span class="en reveal">EVENTS</span>
+    <h2 class="sec reveal">こんな会をひらいています</h2>
+    <p class="lead reveal">気分や予定にあわせて、来やすい会から。</p>
+    <div class="kinds-grid">
+      <div class="kcard reveal" style="--dl:.0s"><span class="em">🍻</span><h3>飲み会</h3><p>乾杯からスタート。お酒が苦手でもソフトドリンクで大歓迎。</p></div>
+      <div class="kcard reveal" style="--dl:.08s"><span class="em">☕</span><h3>カフェ会</h3><p>昼間にゆったり。はじめての人にもおすすめ。</p></div>
+      <div class="kcard reveal" style="--dl:.16s"><span class="em">💨</span><h3>シーシャ会</h3><p>まったりした空気で、いつもより深い話ができる。</p></div>
+      <div class="kcard reveal" style="--dl:.24s"><span class="em">🎉</span><h3>イベント</h3><p>季節の企画やテーマ別の会も。LINEでお知らせします。</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="points" id="points">
+  <div class="wrap">
+    <span class="en reveal">WHY PHOENIX</span>
+    <h2 class="sec reveal">Phoenixのここが楽しい</h2>
+    <p class="lead reveal">ただの飲み会で終わらない、ちょっと新しい交流会。</p>
+    <div class="plist">
+      <div class="pcard reveal"><span class="num">01</span><span class="em">🌟</span><h3>夢や目標を語れる</h3><p>「将来やりたいこと」を話すのが当たり前の場所。口に出すと、応援してくれる人に出会えます。</p></div>
+      <div class="pcard reveal" style="--dl:.08s"><span class="num">02</span><span class="em">🤝</span><h3>仕事でつながれる</h3><p>会社員・経営者・フリーランスなどいろんな人が参加。「こんな人とつながりたい」が叶うかも。</p></div>
+      <div class="pcard reveal" style="--dl:.16s"><span class="num">03</span><span class="em">🎮</span><h3>開催前からワクワク<span class="tag-new">NEW</span></h3><p>LINEのゲームセンターで、チーム対抗戦や毎日のおみくじ。当日は優勝チームが乾杯の音頭！</p></div>
+      <div class="pcard reveal" style="--dl:.24s"><span class="num">04</span><span class="em">🎯</span><h3>話すきっかけがある</h3><p>アンケートをもとにした「当日ミッション」と「話題カード」で、人見知りでも会話がはずみます。</p></div>
+      <div class="pcard reveal" style="--dl:.32s"><span class="num">05</span><span class="em">🛡️</span><h3>安心のルール</h3><p>セクハラ・パワハラ・しつこい勧誘や営業は禁止。守れない人は退場してもらいます。</p></div>
+      <div class="pcard reveal" style="--dl:.4s"><span class="num">06</span><span class="em">📱</span><h3>LINEでかんたん</h3><p>予約もお知らせも、ぜんぶLINEで完結。アプリのダウンロードは不要です。</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="flow">
+  <div class="wrap">
+    <span class="en reveal">HOW TO JOIN</span>
+    <h2 class="sec reveal">参加はかんたん3ステップ</h2>
+    <p class="lead reveal">ぜんぶLINEの中でできます。</p>
+    <div class="steps">
+      <div class="step reveal"><div class="n">1</div><h3>LINEで友だち追加</h3><p>下のボタンから公式LINE「Phoenix」を追加。</p></div>
+      <div class="step reveal" style="--dl:.1s"><div class="n">2</div><h3>1分アンケート</h3><p>ほとんどタップだけ。お名前や興味のある会を教えてね。</p></div>
+      <div class="step reveal" style="--dl:.2s"><div class="n">3</div><h3>予約して参加！</h3><p>予約すると主催者が確認して、LINEで確定のお知らせが届きます。</p></div>
+    </div>
+    <div style="text-align:center;margin-top:28px" class="reveal"><a class="btn-line" href="https://line.me/R/ti/p/@771asgxl" data-cta="flow">LINEで友だち追加する</a></div>
+  </div>
+</section>
+
+<section id="faq" style="padding-top:20px">
+  <div class="wrap">
+    <div class="rules reveal">
+      <h3>🛡️ 参加ルール</h3>
+      <ul>
+        <li>セクハラ・パワハラ・しつこい勧誘や営業は禁止です</li>
+        <li>守れない場合は途中で退場していただき、次回以降も参加できません</li>
+        <li>20歳未満の方は参加できません</li>
+      </ul>
+    </div>
+    <span class="en reveal">FAQ</span>
+    <h2 class="sec reveal" style="margin-bottom:20px">よくある質問</h2>
+    <details class="reveal"><summary>ひとりで参加しても大丈夫？</summary><p>大丈夫です！ひとり参加も大歓迎。ノミィの「当日ミッション」や「話題カード」があるので、話すきっかけに困りません。</p></details>
+    <details class="reveal"><summary>お酒が飲めなくても参加できる？</summary><p>もちろんです。飲み会でもソフトドリンクで楽しめますし、カフェ会もあります。</p></details>
+    <details class="reveal"><summary>勧誘や営業をされることはない？</summary><p>しつこい勧誘・営業はルールで禁止しています。守れない人には退場してもらいます。</p></details>
+    <details class="reveal"><summary>どんな人が来ているの？</summary><p>会社員・経営者・フリーランスなど、20代〜30代を中心にいろんな人が参加しています。</p></details>
+    <details class="reveal"><summary>参加費は？</summary><p>会によって変わります。日時・場所・会費はLINEとイベントページでお知らせします。</p></details>
+  </div>
+</section>
+
+<section class="final" id="join">
+  <div class="wrap">
+    <div class="nomys" aria-hidden="true"><div id="fn1"></div><div id="fn2"></div></div>
+    <h2 class="reveal">次の会で、会えるのを<br>楽しみにしてるね！</h2>
+    <p class="reveal" style="font-weight:700;margin:0 0 20px">まずはLINEで友だち追加。1分で参加の準備ができます。</p>
+    <a class="btn-line reveal" href="https://line.me/R/ti/p/@771asgxl" data-cta="final">LINEで友だち追加して参加</a>
+    <div class="share reveal" aria-label="このページをシェア">
+      <a id="shareX" target="_blank" rel="noopener">𝕏 でシェア</a>
+      <a id="shareLine" target="_blank" rel="noopener">LINEで送る</a>
+      <button type="button" id="copy">リンクをコピー</button>
+    </div>
+  </div>
+</section>
+
+<footer>© Phoenix community ／ <a href="event.html">イベント詳細ページ</a></footer>
+
+<div class="sticky" id="sticky"><a class="btn-line" href="https://line.me/R/ti/p/@771asgxl" data-cta="sticky">LINEで友だち追加して参加</a></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const GAS_URL = 'https://script.google.com/macros/s/AKfycby45UwD6Ymwvnf_D_4vMbUGY_m0DUGJtse1oD3hqwHVuDASQ996Xnu2-AKLAqKheMiytQ/exec';
+const PAGE_URL = 'https://cheerygucci-ctrl.github.io/line-nomikai/lp.html';
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = (id) => document.getElementById(id);
+
+// ノミィ
+Nomy.installCSS();
+$('heroNomy').insertAdjacentHTML('afterbegin', Nomy.svg({ id: 'hn', face: 'happy' }));
+$('fn1').innerHTML = Nomy.svg({ id: 'f1', face: 'happy' });
+$('fn2').innerHTML = Nomy.svg({ id: 'f2', face: 'wink', dark: true });
+const heroSvg = $('heroNomy').querySelector('svg');
+$('heroNomy').addEventListener('click', () => Nomy.play(heroSvg, 'jump'));
+if (!REDUCED) setInterval(() => Nomy.play(heroSvg, ['jump', 'wiggle'][Math.floor(Math.random() * 2)]), 3800);
+
+// ふわふわ浮かぶアイコン
+if (!REDUCED) {
+  const box = $('floats');
+  const icons = ['☕', '🍻', '💨', '🎉', '✨', '🍵', '🌟'];
+  for (let i = 0; i < 16; i++) {
+    const s = document.createElement('span');
+    s.className = 'float';
+    s.textContent = icons[i % icons.length];
+    s.style.cssText = `--s:${18 + Math.random() * 22}px;--x:${Math.random() * 100}%;--d:${9 + Math.random() * 9}s;--delay:${-Math.random() * 14}s;--drift:${(Math.random() - .5) * 80}px;--r:${(Math.random() - .5) * 60}deg`;
+    box.appendChild(s);
+  }
+}
+
+// スクロールで出てくる
+const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .15 });
+document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+
+// 下の参加ボタン（ヒーローを過ぎたら出す）
+const sticky = $('sticky');
+new IntersectionObserver(([e]) => sticky.classList.toggle('on', !e.isIntersecting), { threshold: .1 }).observe($('top'));
+
+function countUp(el, to) {
+  if (REDUCED || to < 1) { el.textContent = to; return; }
+  const t0 = performance.now();
+  const step = (t) => { const p = Math.min(1, (t - t0) / 900); el.textContent = Math.round(to * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+function daysLeft(d) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d || '')) return null;
+  const now = new Date(Date.now() + 9 * 3600 * 1000);
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const [y, m, dd] = d.split('-').map(Number);
+  return Math.round((Date.UTC(y, m - 1, dd) - today) / 86400000);
+}
+
+// 次の会（管理者サイトで入れた情報をそのまま表示）
+(async () => {
+  try {
+    const ctl = new AbortController(); setTimeout(() => ctl.abort(), 12000);
+    const d = await (await fetch(GAS_URL + '?type=event', { signal: ctl.signal })).json();
+    if (!d.ok) return;
+    const ev = d.event || {};
+    const decided = ev.date && ev.date !== '未定';
+    if (ev.name && !/入れてください/.test(ev.name)) $('evName').textContent = ev.name;
+    const meta = [];
+    meta.push(decided ? '🗓️ ' + ev.date : '🗓️ 日程は近日発表');
+    if (ev.place && ev.place !== '未定') meta.push('📍 ' + ev.place);
+    if (ev.fee && ev.fee !== '未定') meta.push('💰 ' + ev.fee);
+    $('evMeta').replaceChildren(...meta.map((t) => Object.assign(document.createElement('span'), { textContent: t })));
+    const left = daysLeft(ev.eventDate);
+    const people = Number(d.attending) || 0;
+    if ((left != null && left >= 0) || people > 0) {
+      $('stats').hidden = false;
+      const daysBox = $('statDays').parentElement;
+      if (left == null || left < 0) daysBox.hidden = true;
+      const io2 = new IntersectionObserver(([e]) => { if (e.isIntersecting) { if (left != null && left >= 0) countUp($('statDays'), left); countUp($('statPeople'), people); io2.disconnect(); } }, { threshold: .4 });
+      io2.observe($('stats'));
+    }
+  } catch (e) { /* 読めなくても表示はそのまま */ }
+})();
+
+// シェア
+const shareText = 'Phoenix｜夢と働き方を、ゆるく語ろう。飲み会・カフェ会・シーシャ会のコミュニティ';
+$('shareX').href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText) + '&url=' + encodeURIComponent(PAGE_URL);
+$('shareLine').href = 'https://social-plugins.line.me/lineit/share?url=' + encodeURIComponent(PAGE_URL);
+$('copy').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(PAGE_URL); toast('リンクをコピーしました！'); } catch (e) { toast(PAGE_URL); }
+});
+function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), 2200); }
+</script>
+</body>
+</html>
