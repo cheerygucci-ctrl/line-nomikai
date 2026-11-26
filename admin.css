@@ -290,6 +290,11 @@ ul.reasons li { background: var(--gold-soft); border-radius: 999px; padding: 2px
 .rcard .racts button { flex: 1; }
 .code-big { font-size: 26px; font-weight: 900; letter-spacing: .06em; background: var(--gold-soft); border-radius: 12px; padding: 12px 16px; text-align: center; user-select: all; -webkit-user-select: all; }
 
+/* テスト用QR */
+.testqr .qr { display: inline-block; background: #fff; padding: 10px; border-radius: 12px; border: 2px solid var(--line); margin-top: 10px; }
+.testqr .qr img, .testqr .qr canvas { width: 180px; height: 180px; display: block; }
+.tag.gold { background: var(--gold-soft); color: #9A6A00; }
+
 /* 友だち */
 .friends { display: grid; gap: 8px; }
 .friend { display: grid; grid-template-columns: 44px 1fr auto; gap: 12px; align-items: center; background: var(--panel); border-radius: 16px; padding: 10px 14px; }

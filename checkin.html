@@ -84,6 +84,8 @@ async function main() {
     const msg = { not_staff: ['主催者だけが使えます', '「通知登録」をしたLINEで読み取ってください'], not_found: ['予約が見つかりません', 'QRが古いかもしれません'],
       not_approved: ['予約が確定していません', '状態：' + (res.status || '') + '。管理者サイトで確認してください'], auth: ['ログインし直してね', ''], bad_code: ['QRが正しくありません', ''] }[res.error] || ['受付できませんでした', res.error || ''];
     show('ng', msg[0], res.nickname ? res.nickname + ' さん' : '', msg[1], 'sad');
+  } else if (res.test) {
+    show('ok', '🧪 テスト成功！', (res.nickname || '') + ' さん', '受付できる状態です。当日は参加者のQRを読んでね', 'sparkle');
   } else if (res.already) {
     show('again', 'もう受付済みです', res.nickname + ' さん', '受付時間：' + (res.checkedIn || '').slice(11, 16), 'wink');
   } else {

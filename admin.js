@@ -468,31 +468,77 @@
     $('view-members').replaceChildren(...parts);
   }
 
-  // 予約の通知をLINEで受け取る（6桁の番号をPhoenixのトークに送ってもらう）
+  // 予約通知とQR受付の登録（6桁の番号をPhoenixのトークに送ってもらう）
+  const TEST_QR = 'https://liff.line.me/2012697224-lfwPcqYm/checkin.html?c=phoenixtest';
+  function loadQrLib() {
+    if (window.QRCode) return Promise.resolve();
+    return new Promise((res, rej) => {
+      const sc = document.createElement('script');
+      sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+      sc.onload = res; sc.onerror = rej; document.head.appendChild(sc);
+    });
+  }
   function notifyPanel(m) {
-    const count = el('p', { className: 'note', style: 'margin:0 0 10px' });
-    const setCount = (n) => { count.textContent = n ? `いま ${n} 人がLINEで予約の通知を受け取っています。` : 'まだ誰も登録していません。'; };
-    setCount((data && data.organizerCount) || 0);
+    const ROLE = { organizer: ['📩 通知＋受付', 'gold'], staff: ['📱 受付のみ', ''] };
+    const listBox = el('ul', { className: 'members' });
+    const drawList = (staff) => {
+      data.staff = staff;
+      listBox.replaceChildren(...(staff.length ? staff.map((p) => {
+        const right = [el('span', { className: 'tag ' + ROLE[p.role][1], textContent: ROLE[p.role][0] })];
+        if (m.isOwner) {
+          const del = el('button', { type: 'button', className: 'ghost-btn', textContent: '外す' });
+          del.addEventListener('click', () => ask(p.name + ' さんを外しますか？', 'このLINEでは当日のQR受付' + (p.role === 'organizer' ? 'と予約の通知' : '') + 'ができなくなります。', '外す').then((yes) => {
+            if (!yes) return;
+            run().withSuccessHandler((st) => { drawList(st); toast('外しました'); }).withFailureHandler((e) => toast(e.message, { err: true })).removeStaff(p.role, p.index);
+          }));
+          right.push(del);
+        }
+        return el('li', {}, [el('span', { className: 'avatar', 'aria-hidden': 'true', textContent: (p.name || '?').slice(0, 1) }), el('span', { className: 'mail', textContent: p.name }), el('span', { className: 'right' }, right)]);
+      }) : [el('li', { className: 'empty', textContent: 'まだ誰も登録していません。' })]));
+    };
+    drawList((data && data.staff) || []);
+
     const out = el('div');
-    const btn = el('button', { type: 'button', className: 'primary', textContent: '番号を発行する' });
+    const btn = el('button', { type: 'button', className: 'primary', textContent: '登録用の番号を出す' });
     btn.addEventListener('click', () => {
       btn.disabled = true;
       run().withSuccessHandler((r) => {
         btn.disabled = false;
-        const codeEl = el('div', { className: 'code-big', textContent: '通知登録 ' + r.code });
         out.replaceChildren(
-          el('p', { className: 'note', style: 'margin:12px 0 6px', textContent: '公式LINE「Phoenix」のトークに、次の文字をそのまま送ってください（30分以内・1回だけ使えます）。' }),
-          codeEl,
+          el('p', { className: 'note', style: 'margin:12px 0 6px', textContent: '登録したい人のLINEで、公式LINE「Phoenix」のトークに、どちらかをそのまま送ってください（30分以内・1回だけ使えます）。' }),
+          el('div', { className: 'code-big', textContent: '受付登録 ' + r.code }),
+          el('p', { className: 'note', style: 'margin:4px 0 10px', textContent: '👆 当日のQR受付だけできる（スタッフ向け）' }),
+          el('div', { className: 'code-big', textContent: '通知登録 ' + r.code }),
+          el('p', { className: 'note', style: 'margin:4px 0 0', textContent: '👆 予約が入るたびにLINEで通知＋QR受付もできる（主催者向け）' }),
         );
         toast('番号を発行しました');
       }).withFailureHandler((e) => { btn.disabled = false; toast(e.message, { err: true }); }).issueOrganizerCode();
     });
-    const kids = [el('h2', { textContent: '📲 予約の通知をLINEで受け取る' }), count, btn, out];
+
+    const qrBox = el('div', { className: 'testqr' });
+    const qrBtn = el('button', { type: 'button', className: 'ghost-btn', textContent: '🧪 テスト用QRを表示' });
+    qrBtn.addEventListener('click', async () => {
+      qrBtn.disabled = true;
+      try {
+        await loadQrLib();
+        const box = el('div', { className: 'qr' });
+        qrBox.replaceChildren(box, el('p', { className: 'note', textContent: '登録した人のスマホのカメラでこのQRを読んで、LINEで「受付できる状態です」と出ればOK！（本当の受付は記録されません）' }));
+        new QRCode(box, { text: TEST_QR, width: 360, height: 360, correctLevel: QRCode.CorrectLevel.M });
+      } catch (e) { toast('QRを表示できませんでした', { err: true }); }
+      qrBtn.disabled = false;
+    });
+
+    const kids = [
+      el('h2', { textContent: '📲 当日のQR受付・予約の通知' }),
+      el('p', { className: 'note', style: 'margin:0 0 8px', textContent: 'ここに登録されたLINEだけが、当日参加者のQRをスマホのカメラで読んで受付できます。受付スタッフは「受付登録」、予約の通知もほしい主催者は「通知登録」で登録してください。' }),
+      listBox, el('div', { style: 'margin-top:12px' }, [btn]), out,
+      el('div', { style: 'margin-top:16px' }, [qrBtn]), qrBox,
+    ];
     if (m.isOwner) {
-      const clear = el('button', { type: 'button', className: 'ghost-btn', style: 'margin-top:12px', textContent: '通知の受け取りを全員解除' });
-      clear.addEventListener('click', () => ask('通知の受け取りを全員解除しますか？', '解除すると、予約が入ってもLINEには届きません（管理者サイトでは見られます）。', '解除する').then((yes) => {
+      const clear = el('button', { type: 'button', className: 'ghost-btn', style: 'margin-top:12px', textContent: '予約通知の受け取りを全員解除' });
+      clear.addEventListener('click', () => ask('予約通知の受け取りを全員解除しますか？', '「通知＋受付」の人が全員外れます（受付のみの人はそのまま）。', '解除する').then((yes) => {
         if (!yes) return;
-        run().withSuccessHandler((r) => { setCount(r.count); toast('解除しました'); }).withFailureHandler((e) => toast(e.message, { err: true })).clearOrganizers();
+        run().withSuccessHandler(() => { drawList(((data && data.staff) || []).filter((p) => p.role === 'staff')); toast('解除しました'); }).withFailureHandler((e) => toast(e.message, { err: true })).clearOrganizers();
       }));
       kids.push(el('div', {}, [clear]));
     }
@@ -549,7 +595,8 @@
       draw();
     }));
     const notes = [el('p', { className: 'note', textContent: '参加者がLINEの予約ページで「行ける！予約する」か「今回は行けない」を押すとここに集まります。予約を承認すると、本人のLINEに「予約が確定しました」と自動で届きます。' })];
-    if (!data.organizerCount) notes.push(el('p', { className: 'note', style: 'color:var(--red)', textContent: '📲 予約が入ったときにLINEで知らせてほしい場合は「メンバー」タブで登録してください。' }));
+    const nStaff = (data.staff || []).length;
+    notes.push(el('p', { className: 'note', style: nStaff ? '' : 'color:var(--red)', textContent: nStaff ? '📱 当日のQR受付ができる人：' + nStaff + '人（「メンバー」タブで確認・追加）' : '📱 当日のQR受付をする人は、「メンバー」タブで登録してください（受付登録）。' }));
     $('view-reserve').replaceChildren(tiles, ...notes, el('div', { className: 'toolbar' }, [el('div', { className: 'toggle', role: 'group', 'aria-label': '表示する予約' }, btns)]), body);
     draw();
   }
