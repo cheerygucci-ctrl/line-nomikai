@@ -75,10 +75,13 @@
 
     <!-- 予約前 -->
     <div id="vForm" hidden>
+      <p class="msg" style="margin-top:14px">この会に行けそう？</p>
       <label class="l" for="comment">主催者へひとこと（任意）</label>
       <textarea id="comment" maxlength="200" placeholder="例：はじめて参加します！よろしくお願いします"></textarea>
-      <button class="btn" id="reserveBtn" type="button">🎫 予約する</button>
-      <p class="note">予約すると主催者が確認します。確定したら、このLINEのトークでお知らせします。</p>
+      <button class="btn" id="reserveBtn" type="button">🙋 行ける！予約する</button>
+      <p class="note" id="needNote" hidden>※ 予約の前に、かんたんなアンケート（約1分）に答えてね。ボタンを押すとアンケートが開きます。</p>
+      <button class="btn sub" id="declineBtn" type="button">🙇 今回は行けない</button>
+      <p class="note">予約すると主催者が確認して、確定したらこのLINEのトークでお知らせします。</p>
     </div>
 
     <!-- 承認待ち・確定 -->
@@ -89,6 +92,7 @@
       <div style="text-align:center"><span class="badge" id="badge" hidden></span></div>
       <a class="btn beer" id="toEvent" href="event.html">イベントの詳細を見る</a>
       <button class="btn sub" id="cancelBtn" type="button">予約を取り消す</button>
+      <button class="btn" id="againBtn" type="button" hidden>🙋 やっぱり行ける！</button>
     </div>
 
     <!-- アンケート未回答 -->
@@ -135,7 +139,8 @@ async function api(body) {
     if (params.has('need')) return { ok: false, error: 'not_answered' };
     if (body.type === 'reserve') previewStatus = '申請中';
     if (body.type === 'reserveCancel') previewStatus = 'キャンセル';
-    return { ok: true, status: previewStatus, nickname: 'ありす', notified: true, code: previewStatus === '承認' ? 'abc123def456' : '', visits: 3,
+    if (body.type === 'reserveDecline') previewStatus = '不参加';
+    return { ok: true, status: previewStatus, nickname: 'ありす', notified: true, needSurvey: params.has('new'), code: previewStatus === '承認' ? 'abc123def456' : '', visits: 3,
       event: { name: '年末だよ！みんなで忘年会', date: '12/20(土) 19:00〜', place: '居酒屋 のんき', address: '渋谷区…', fee: '4,000円', deadline: '12/15' } };
   }
   const ctl = new AbortController();
@@ -159,6 +164,8 @@ function setSteps(n) {
 }
 
 function render(res) {
+  lastRes = res;
+  if (typeof res.needSurvey === 'boolean') needSurvey = res.needSurvey;
   renderEvent(res.event);
   const st = res.status;
   ['vForm', 'vStatus', 'vNeed'].forEach((id) => { $(id).hidden = true; });
@@ -191,12 +198,39 @@ function render(res) {
     $('statusNote').textContent = '申請ありがとうございました。また次回の会でお会いできたらうれしいです🙇';
     $('cancelBtn').hidden = true;
     say('またね！', 'sad');
+  } else if (st === '不参加') {
+    setSteps(0);
+    stamp.hidden = false; stamp.className = 'stamp no'; stamp.textContent = '今回は不参加';
+    $('vStatus').hidden = false;
+    $('statusMsg').textContent = '教えてくれてありがとう！';
+    $('statusNote').textContent = '今回は不参加で受け付けたよ。予定が変わったら、下のボタンからいつでも予約できるよ。また次の会で会おうね🍻';
+    $('cancelBtn').hidden = true; $('toEvent').hidden = true; $('againBtn').hidden = false;
+    say('また次の会で会おうね！', 'wink');
   } else {
     setSteps(0);
     $('vForm').hidden = false;
-    say(st === 'キャンセル' ? 'もう一度予約する？' : '内容を確認して予約してね！', 'happy');
+    $('needNote').hidden = !needSurvey;
+    say(st === 'キャンセル' ? 'もう一度予約する？' : '行けるかどうか教えてね！', 'happy');
   }
+  if (st !== '不参加') { $('againBtn').hidden = true; $('toEvent').hidden = false; }
 }
+
+let needSurvey = false;
+const SURVEY_URL = 'https://liff.line.me/' + LIFF_ID;
+$('declineBtn').addEventListener('click', async () => {
+  $('err').textContent = '';
+  const ok = await confirmSheet('今回は「行けない」で送りますか？', '予定が変わったら、あとから予約することもできます。', '行けないで送る');
+  if (!ok) return;
+  $('declineBtn').disabled = true;
+  try {
+    const res = await api({ type: 'reserveDecline', comment: $('comment').value.trim() });
+    if (!res.ok) throw new Error(res.error);
+    render(res);
+  } catch (e) { $('err').textContent = '送れませんでした。電波のいいところで、もう一度押してね。'; }
+  $('declineBtn').disabled = false;
+});
+$('againBtn').addEventListener('click', () => { render({ ...lastRes, status: '' }); });
+let lastRes = null;
 
 const CHECKIN_BASE = 'https://liff.line.me/' + LIFF_ID + '/checkin.html?c=';
 function loadQrLib() {
@@ -243,6 +277,7 @@ function confetti() {
 
 $('reserveBtn').addEventListener('click', async () => {
   $('err').textContent = '';
+  if (needSurvey) { location.href = SURVEY_URL; return; }
   const comment = $('comment').value.trim();
   const ok = await confirmSheet('この内容で予約を確定しますか？', $('evName').textContent + '\n' + (comment ? '主催者へ：' + comment : ''), '確定する');
   if (!ok) return;

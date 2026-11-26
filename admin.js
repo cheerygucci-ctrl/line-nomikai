@@ -501,7 +501,7 @@
 
   // ---------- 予約 ----------
   let reserveFilter = 'wait';
-  const R_FILTERS = [{ key: 'wait', label: '承認待ち' }, { key: 'ok', label: '確定' }, { key: 'all', label: 'すべて' }];
+  const R_FILTERS = [{ key: 'wait', label: '承認待ち' }, { key: 'ok', label: '確定' }, { key: 'no', label: '行けない' }, { key: 'all', label: 'すべて' }];
   function renderReserve() {
     const R = data.reservations || [];
     const wait = R.filter((r) => r.status === '申請中');
@@ -509,18 +509,18 @@
     if (badge) { badge.textContent = wait.length; badge.hidden = !wait.length; }
     const tile = (n, label, em, cls) => { const num = el('div', { className: 'n', textContent: '0' }); countUp(num, n); return el('div', { className: 'tile ' + (cls || '') }, [el('span', { className: 'em', 'aria-hidden': 'true', textContent: em }), num, el('div', { className: 'l', textContent: label })]); };
     const tiles = el('div', { className: 'tiles', style: 'margin-bottom:14px' }, [
-      tile(wait.length, '承認待ち', '⏳', 'main'),
+      tile(R.filter((r) => r.status === '申請中' || r.status === '承認').length, '行ける（予約）', '🙋', 'main'),
+      tile(R.filter((r) => r.status === '不参加').length, '行けない', '🙇'),
+      tile(wait.length, '承認待ち', '⏳'),
       tile(R.filter((r) => r.checkedIn).length, '来場済み', '✅'),
       tile(R.filter((r) => r.status === '承認').length, '予約確定', '🎉'),
-      tile(R.filter((r) => r.status === '見送り').length, '見送り', '🙇'),
-      tile(R.filter((r) => r.status === 'キャンセル').length, 'キャンセル', '↩️'),
     ].map(stagger));
     const btns = R_FILTERS.map((x) => el('button', { type: 'button', textContent: x.label, 'aria-pressed': String(reserveFilter === x.key) }));
     const body = el('div', { className: 'friends' });
-    const PILL = { '申請中': 'wait', '承認': 'yes', '見送り': 'no', 'キャンセル': 'no' };
-    const LABEL = { '申請中': '承認待ち', '承認': '確定', '見送り': '見送り', 'キャンセル': 'キャンセル' };
+    const PILL = { '申請中': 'wait', '承認': 'yes', '見送り': 'no', 'キャンセル': 'no', '不参加': 'no' };
+    const LABEL = { '申請中': '承認待ち', '承認': '確定', '見送り': '見送り', 'キャンセル': 'キャンセル', '不参加': '行けない' };
     const draw = () => {
-      const list = R.filter((r) => reserveFilter === 'all' || (reserveFilter === 'wait' ? r.status === '申請中' : r.status === '承認'));
+      const list = R.filter((r) => reserveFilter === 'all' || (reserveFilter === 'wait' ? r.status === '申請中' : reserveFilter === 'no' ? r.status === '不参加' : r.status === '承認'));
       body.replaceChildren(...(list.length ? list.map((r, i) => {
         const acts = [];
         if (r.status === '申請中' || r.status === '承認' || r.status === '見送り') {
@@ -548,7 +548,7 @@
       btns.forEach((x, j) => x.setAttribute('aria-pressed', String(i === j)));
       draw();
     }));
-    const notes = [el('p', { className: 'note', textContent: '参加者がLINEで「予約する→確定」を押すとここに届きます。承認すると、本人のLINEに「予約が確定しました」と自動で届きます。' })];
+    const notes = [el('p', { className: 'note', textContent: '参加者がLINEの予約ページで「行ける！予約する」か「今回は行けない」を押すとここに集まります。予約を承認すると、本人のLINEに「予約が確定しました」と自動で届きます。' })];
     if (!data.organizerCount) notes.push(el('p', { className: 'note', style: 'color:var(--red)', textContent: '📲 予約が入ったときにLINEで知らせてほしい場合は「メンバー」タブで登録してください。' }));
     $('view-reserve').replaceChildren(tiles, ...notes, el('div', { className: 'toolbar' }, [el('div', { className: 'toggle', role: 'group', 'aria-label': '表示する予約' }, btns)]), body);
     draw();
