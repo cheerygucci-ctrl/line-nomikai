@@ -563,8 +563,8 @@
     ].map(stagger));
     const btns = R_FILTERS.map((x) => el('button', { type: 'button', textContent: x.label, 'aria-pressed': String(reserveFilter === x.key) }));
     const body = el('div', { className: 'friends' });
-    const PILL = { '申請中': 'wait', '承認': 'yes', '見送り': 'no', 'キャンセル': 'no', '不参加': 'no' };
-    const LABEL = { '申請中': '承認待ち', '承認': '確定', '見送り': '見送り', 'キャンセル': 'キャンセル', '不参加': '行けない' };
+    const PILL = { '申請中': 'wait', '承認': 'yes', '見送り': 'no', 'キャンセル': 'no', '不参加': 'no', '退場': 'no' };
+    const LABEL = { '申請中': '承認待ち', '承認': '確定', '見送り': '見送り', 'キャンセル': 'キャンセル', '不参加': '行けない', '退場': '🚪 退場' };
     const draw = () => {
       const list = R.filter((r) => reserveFilter === 'all' || (reserveFilter === 'wait' ? r.status === '申請中' : reserveFilter === 'no' ? r.status === '不参加' : r.status === '承認'));
       body.replaceChildren(...(list.length ? list.map((r, i) => {
@@ -584,7 +584,7 @@
           el('div', { className: 'meta', textContent: sub }),
           r.comment ? el('div', { className: 'rcomment', textContent: '💬 ' + r.comment }) : null,
           r.checkedIn ? el('div', { className: 'rcheck', textContent: '✅ 来場 ' + r.checkedIn.slice(5, 16) }) : null,
-          r.flag || r.memo ? el('div', { className: 'rwarn' + (r.flag ? ' flag' : ''), textContent: (r.flag ? '⚠️ 要注意：' : '📝 ') + (r.memo || '') }) : null,
+          r.flag || r.memo ? el('div', { className: 'rwarn' + (r.flag ? ' flag' : ''), textContent: (r.ban ? '🚫 出禁：' : r.flag ? '⚠️ 要注意：' : '📝 ') + (r.memo || '') }) : null,
           acts.length ? el('div', { className: 'racts' }, acts) : null,
         ]), i);
       }) : [el('p', { className: 'empty', textContent: reserveFilter === 'wait' ? '承認待ちの予約はありません。' : '当てはまる予約はありません。' })]));
@@ -705,7 +705,7 @@
       const table = el('div', { className: 'tablewrap' }, [el('table', {}, [
         el('thead', {}, [el('tr', {}, ['回答日時', 'ニックネーム', 'LINE名', '参加', '年齢', '職業', '知ったきっかけ', '参加の目的', '仕事でつながりたい人', 'お酒', 'NG・アレルギー', '夢・やりたいこと', '目標', 'ひとこと'].map((h) => el('th', { textContent: h })))]),
         el('tbody', {}, list.map((a, i) => stagger(el('tr', {}, [
-          el('td', { textContent: a.at }), el('td', { textContent: (a.flag ? '⚠️ ' : '') + a.nickname, title: a.memo || '' }), el('td', { textContent: a.lineName }),
+          el('td', { textContent: a.at }), el('td', { textContent: (a.ban ? '🚫 ' : a.flag ? '⚠️ ' : '') + a.nickname, title: a.memo || '' }), el('td', { textContent: a.lineName }),
           el('td', {}, [el('span', { className: 'pill ' + (a.attend === '参加' ? 'yes' : 'no'), textContent: a.attend })]),
           el('td', { textContent: a.age ? a.age + '歳' : '—' }),
           el('td', { className: 'long', textContent: val(a, DETAIL[1][1]) || '—' }),
@@ -718,7 +718,7 @@
       const cards = el('div', { className: 'cards' }, list.map((a, i) => {
         const card = el('article', { className: 'acard' });
         const head = el('button', { type: 'button', 'aria-expanded': 'false' }, [
-          el('span', { className: 'who', textContent: (a.flag ? '⚠️ ' : '') + a.nickname }),
+          el('span', { className: 'who', textContent: (a.ban ? '🚫 ' : a.flag ? '⚠️ ' : '') + a.nickname }),
           el('span', {}, [el('span', { className: 'pill ' + (a.attend === '参加' ? 'yes' : 'no'), textContent: a.attend }), el('span', { className: 'chev', 'aria-hidden': 'true', textContent: ' ▾' })]),
           el('span', { className: 'meta', textContent: [a.age ? a.age + '歳' : '', a.job ? '💼 ' + a.job : '', a.purpose, a.connect ? '🤝 ' + a.connect : ''].filter(Boolean).join('　') || a.at }),
         ]);
@@ -852,14 +852,14 @@
     btn.addEventListener('click', () => {
       btn.disabled = true;
       run().withSuccessHandler((m) => {
-        btn.disabled = false; a.memo = m.memo; a.flag = m.flag;
+        btn.disabled = false; a.memo = m.memo; a.flag = m.flag; a.ban = m.ban;
         toast(m.flag ? '⚠️ 要注意にしました' : 'メモを保存しました');
         if (onSaved) onSaved();
       }).withFailureHandler((e) => { btn.disabled = false; toast(e.message, { err: true }); }).saveMemo(a.row, ta.value, cb.checked);
     });
     return el('div', { className: 'memo-ed' + (a.flag ? ' flag' : '') }, [
       el('div', { className: 'memo-h', textContent: '📝 管理者メモ（本人には見えません）' }), ta,
-      el('div', { className: 'memo-row' }, [el('label', {}, [cb, ' ⚠️ 要注意にする（予約・受付で警告）']), btn]),
+      el('div', { className: 'memo-row' }, [el('label', {}, [cb, a.ban ? ' 🚫 出禁中（外すとまた予約できます）' : ' ⚠️ 要注意にする（予約・受付で警告）']), btn]),
     ]);
   }
 

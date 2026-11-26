@@ -27,6 +27,10 @@
   .warn { margin-top: 16px; background: #FFF0EB; border: 3px solid var(--warn); border-radius: 16px; padding: 12px 14px; text-align: left; font-weight: 700; }
   .warn b { color: var(--warn); display: block; margin-bottom: 4px; }
   .note { margin-top: 16px; font-size: 13px; color: var(--sub); }
+  .acts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; }
+  .acts a { display: block; border-radius: 14px; padding: 12px 6px; font-weight: 900; text-decoration: none; color: #fff; font-size: 14px; }
+  .acts .help { background: #1F2A44; } .acts .sos { background: var(--warn); }
+  body.ban { background: linear-gradient(160deg, #B3261E, #5C0F0A); }
 </style>
 </head>
 <body>
@@ -37,6 +41,10 @@
   <p class="sub" id="sub"></p>
   <div id="badgeBox"></div>
   <div id="warnBox"></div>
+  <div class="acts" id="acts" hidden>
+    <a class="help" id="toGuest" href="staff.html">🛡 この人に対応</a>
+    <a class="sos" href="staff.html">🚨 スタッフを呼ぶ</a>
+  </div>
   <p class="note">主催者用の受付画面です。次の人は、スマホのカメラでQRを読んでください。</p>
 </div>
 <script>
@@ -70,7 +78,8 @@ async function main() {
   const code = params.get('c') || '';
   let res;
   if (PREVIEW) {
-    res = { ok: true, already: params.has('again'), nickname: 'ありす', lineName: 'Alice', visits: 3, badge: '⭐ リピーター', checkedIn: '2026/12/20 19:05:00', warn: params.has('warn'), memo: params.has('warn') ? '前回しつこい営業あり。様子を見る' : '' };
+    res = params.has('ban') ? { ok: false, error: 'banned', nickname: 'たける', warn: true, ban: true, memo: '11/20 20:10 ぐっち：しつこい勧誘で退場' }
+      : { ok: true, already: params.has('again'), nickname: 'ありす', lineName: 'Alice', visits: 3, badge: '⭐ リピーター', checkedIn: '2026/12/20 19:05:00', warn: params.has('warn'), memo: params.has('warn') ? '前回しつこい営業あり。様子を見る' : '' };
   } else {
     try { await loadSdk(); await liff.init({ liffId: LIFF_ID }); } catch (e) { return show('ng', 'LINEで開いてね', '', 'スマホのカメラでQRを読むと、LINEで開きます', 'sad'); }
     if (!liff.isLoggedIn()) { liff.login({ redirectUri: location.href }); return; }
@@ -80,7 +89,14 @@ async function main() {
       res = await r.json();
     } catch (e) { return show('ng', '通信エラー', '', '電波のいいところで、もう一度読み取ってください', 'sad'); }
   }
-  if (!res.ok) {
+  if (res.nickname && res.error !== 'not_staff') {
+    $('toGuest').href = 'staff.html?c=' + encodeURIComponent(code || 'aaaaaa111111') + (PREVIEW ? '&preview' : '');
+    $('acts').hidden = false;
+  }
+  if (res.error === 'banned') {
+    show('ng ban', '🚫 出禁の人です', res.nickname + ' さん', '受付していません。入場をお断りしてください', 'sad');
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+  } else if (!res.ok) {
     const msg = { not_staff: ['主催者だけが使えます', '「通知登録」をしたLINEで読み取ってください'], not_found: ['予約が見つかりません', 'QRが古いかもしれません'],
       not_approved: ['予約が確定していません', '状態：' + (res.status || '') + '。管理者サイトで確認してください'], auth: ['ログインし直してね', ''], bad_code: ['QRが正しくありません', ''] }[res.error] || ['受付できませんでした', res.error || ''];
     show('ng', msg[0], res.nickname ? res.nickname + ' さん' : '', msg[1], 'sad');

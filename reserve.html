@@ -289,7 +289,7 @@ $('reserveBtn').addEventListener('click', async () => {
     render(res);
     confetti();
   } catch (e) {
-    $('err').textContent = '予約を送れませんでした。電波のいいところで、もう一度押してね。';
+    $('err').textContent = e.message === 'closed' ? '申し訳ありません。今回はご予約をお受けできません。' : '予約を送れませんでした。電波のいいところで、もう一度押してね。';
     say('あれれ…', 'sad', 'droop');
   } finally { b.disabled = false; b.textContent = '🎫 予約する'; }
 });
